@@ -9,6 +9,7 @@
 
   const { ytdom, ui, cache, langdetect, builtinEngine, settings, util } = BYCT;
   const { sameLang, debounce, normalizeLang } = util;
+  const t = (k, params) => BYCT.i18n.t(k, params);
 
   /** comment element -> 처리 레코드 */
   const records = new Map();
@@ -71,7 +72,7 @@
         targetLanguage: tgt,
       });
       if (!res || !res.ok) {
-        const err = Object.assign(new Error((res && res.error) || '백그라운드 응답 없음'), {
+        const err = Object.assign(new Error((res && res.error) || t('err.noBackground')), {
           __code: res && res.code, __noRetry: res && res.noRetry,
         });
         items.forEach((it) => it.reject(err));
@@ -94,9 +95,7 @@
 
   // ---------- 엔진 호출 ----------
 
-  const engineLabel = (id) => ({
-    builtin: 'Chrome', deepl: 'DeepL', google: 'Google', llm: 'LLM',
-  })[id] || id;
+  const engineLabel = (id) => BYCT.ENGINE_SHORT[id] || id;
 
   async function runEngine(engineId, text, src, tgt, comment) {
     if (engineId === 'builtin') {
@@ -149,7 +148,7 @@
         ui.setState(comment, 'needs-download', { detected: rec.detected });
         break;
       case 'error':
-        ui.setState(comment, 'error', { message: rec.error || '번역 실패' });
+        ui.setState(comment, 'error', { message: rec.error || t('status.failed') });
         break;
       case 'skipped':
         ui.setState(comment, 'skipped');
@@ -205,8 +204,7 @@
         if (cfg.fallbackEngine) {
           return translateWith(comment, rec, cfg.fallbackEngine, 'und', tgt, priority);
         }
-        setState(comment, rec, 'error',
-          { error: '원문 언어를 알 수 없습니다 — 설정에서 대체 엔진을 지정하면 번역할 수 있습니다' });
+        setState(comment, rec, 'error', { error: t('err.unknownSource') });
         return;
       }
       const route = await builtinEngine.resolveRoute(src, tgt);
@@ -216,7 +214,7 @@
           return translateWith(comment, rec, cfg.fallbackEngine, src, tgt, priority);
         }
         setState(comment, rec, 'error', {
-          error: `Chrome 내장 번역이 ${ui.langLabel(src)}→${ui.langLabel(tgt)}를 지원하지 않습니다`,
+          error: t('err.pairUnavailable', { src: ui.langLabel(src), tgt: ui.langLabel(tgt) }),
         });
         return;
       }
@@ -263,7 +261,7 @@
 
       // 기본 엔진이 실패하면 대체 엔진으로 한 번 더
       if (engineId === cfg.engine && cfg.fallbackEngine && cfg.fallbackEngine !== engineId) {
-        console.warn('[BYCT] 기본 엔진 실패, 대체 엔진 시도:', e && e.message);
+        console.warn('[BYCT] primary engine failed, trying fallback:', e && e.message);
         return translateWith(comment, rec, cfg.fallbackEngine, src, tgt, priority);
       }
       const msg = String((e && e.message) || e);
@@ -398,8 +396,8 @@
   function onMutations(muts) {
     for (const m of muts) {
       // 우리가 넣은 노드가 만든 변경은 무시 (안 그러면 스스로를 계속 깨운다)
-      const t = m.target;
-      const tEl = t && t.nodeType === 1 ? t : (t && t.parentElement);
+      const target = m.target;
+      const tEl = target && target.nodeType === 1 ? target : (target && target.parentElement);
       if (tEl && tEl.closest && tEl.closest('.byct-root')) continue;
 
       if (m.addedNodes && m.addedNodes.length) {
@@ -409,7 +407,7 @@
           for (const c of ytdom.allComments(n)) dirty.add(c);
         }
       }
-      const host = ytdom.hostComment(t);
+      const host = ytdom.hostComment(target);
       if (host) dirty.add(host);
     }
     if (dirty.size) flushDirty();
@@ -421,7 +419,7 @@
     dirty.clear();
     for (const c of nodes) {
       if (!c.isConnected) continue;
-      try { syncComment(c); } catch (e) { console.error('[BYCT] syncComment 오류', e); }
+      try { syncComment(c); } catch (e) { console.error('[BYCT] syncComment failed', e); }
     }
     pruneDetached();
   }, 200);
@@ -431,7 +429,7 @@
     if (!cfg.enabled) return;
     const root = ytdom.commentsRoot() || document;
     for (const c of ytdom.allComments(root)) {
-      try { syncComment(c); } catch (e) { console.error('[BYCT] syncComment 오류', e); }
+      try { syncComment(c); } catch (e) { console.error('[BYCT] syncComment failed', e); }
     }
     pruneDetached();
   }
@@ -545,7 +543,7 @@
       translateComment(comment, { userGesture: true, priority: 70 });
       n++;
     }
-    ui.toast(n ? `${n}개 댓글 번역 중…` : '번역할 새 댓글이 없습니다');
+    ui.toast(n ? t('toast.translatingN', { n }) : t('toast.nothingNew'));
     return n;
   }
 
@@ -621,6 +619,7 @@
       for (const [c, rec] of records) if (!rec.trivial) applyOriginalVisibility(c, rec);
     }
     if (patch.showEngineBadge !== undefined) repaintAll();
+    if (patch.uiLang !== undefined) { BYCT.i18n.setLang(cfg.uiLang); repaintAll(); }
     if (patch.autoTranslate === true) {
       for (const [comment, rec] of records) {
         if (!rec.skip && !rec.trivial && rec.state === 'idle' && rec.detected && isVisible(comment)) {
@@ -637,6 +636,7 @@
     started = true;
 
     cfg = await settings.get();
+    BYCT.i18n.setLang(cfg.uiLang);
     await cache.load();
     settings.onChange(applySettings);
     queue.setConcurrency(cfg.concurrency);
@@ -646,12 +646,13 @@
 
     document.addEventListener('yt-navigate-finish', () => setTimeout(resetForNavigation, 300));
 
-    console.log('[BYCT] Better YouTube Comment Translation v' + BYCT.VERSION + ' 시작');
+    console.log('[BYCT] Better YouTube Comment Translation v' + BYCT.VERSION + ' started');
   }
 
   // 디버깅용 (콘솔에서 상태 확인). cfg 에는 API 키가 들어있지 않다.
   BYCT._debug = {
-    records, queue, scanAll, translateVisible, syncComment,
+    records, queue, scanAll, translateVisible, syncComment, dirty,
+    get dirtySize() { return dirty.size; },
     get cfg() { return cfg; },
   };
 

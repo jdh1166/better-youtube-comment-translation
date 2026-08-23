@@ -2,7 +2,7 @@
    번들러 없이 manifest의 js 배열 순서대로 로드되므로, 이 파일이 항상 첫 번째다. */
 var BYCT = (globalThis.BYCT = globalThis.BYCT || {});
 
-BYCT.VERSION = '0.2.0';
+BYCT.VERSION = '0.3.0';
 
 /** 엔진 ID */
 BYCT.ENGINE = {
@@ -12,35 +12,19 @@ BYCT.ENGINE = {
   LLM: 'llm',           // OpenAI 호환 chat completions (슬랭/밈에 강함)
 };
 
-/** 엔진 메타데이터. options 화면이 이걸로 폼을 그린다. */
+/* 엔진 메타데이터. options 화면이 이걸로 폼을 그린다.
+   표시 문구는 i18n 카탈로그 키로만 들고 있는다 — 이 파일은 i18n.js 보다 먼저 로드되므로
+   여기서 t() 를 부를 수 없고, 사용자가 화면 언어를 바꾸면 다시 그려야 하기 때문이다. */
 BYCT.ENGINE_META = {
-  builtin: {
-    label: 'Chrome 내장 번역 (온디바이스)',
-    needsKey: false,
-    remote: false,
-    note: 'API 키 불필요·무료·기기 밖으로 데이터가 나가지 않음. 최초 1회 언어팩 다운로드 필요.',
-  },
-  deepl: {
-    label: 'DeepL',
-    needsKey: true,
-    remote: true,
-    keyHint: 'DeepL API 키 (무료 키는 :fx 로 끝남)',
-    note: '번역 품질이 가장 자연스러운 편. 무료 티어 월 50만 자.',
-  },
-  google: {
-    label: 'Google Cloud Translation',
-    needsKey: true,
-    remote: true,
-    keyHint: 'Google Cloud API 키',
-    note: '지원 언어가 가장 많음. 유료(월 50만 자 무료 크레딧).',
-  },
-  llm: {
-    label: 'LLM (OpenAI 호환)',
-    needsKey: true,
-    remote: true,
-    keyHint: 'API 키',
-    note: '인터넷 슬랭·밈·말장난 번역이 가장 자연스러움. 느리고 비용 발생.',
-  },
+  builtin: { needsKey: false, remote: false },
+  deepl: { needsKey: true, remote: true },
+  google: { needsKey: true, remote: true },
+  llm: { needsKey: true, remote: true },
+};
+
+/** 엔진 표시 이름 (배지 등에 쓰는 짧은 이름 — 번역하지 않는 고유명사) */
+BYCT.ENGINE_SHORT = {
+  builtin: 'Chrome', deepl: 'DeepL', google: 'Google', llm: 'LLM',
 };
 
 /** 번역 대상 언어 목록 (Chrome 내장 Translator 지원 언어 위주) */
@@ -55,11 +39,31 @@ BYCT.LANGUAGES = [
   ['te', 'తెలుగు'], ['mr', 'मराठी'], ['kn', 'ಕನ್ನಡ'], ['ms', 'Bahasa Melayu'],
 ];
 
+/* 브라우저 UI 언어로 기본 번역 대상을 정한다.
+   예전에는 'ko' 로 하드코딩되어 있어서, 영어권 사용자가 설치하면 모든 댓글이
+   한국어로 번역되는 상태로 시작했다. 설치 시점에 storage 에 기록해 고정한다. */
+BYCT.defaultTargetLang = function () {
+  let raw = '';
+  try {
+    raw = (chrome.i18n && chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()) || '';
+  } catch { /* 확장 컨텍스트가 아닐 수 있다 */ }
+  if (!raw && typeof navigator !== 'undefined') raw = navigator.language || '';
+  const lower = String(raw).toLowerCase();
+
+  // zh-TW / zh-HK 는 번체를 쓴다
+  if (lower.startsWith('zh')) {
+    return /tw|hk|mo|hant/.test(lower) ? 'zh-Hant' : 'zh';
+  }
+  const base = lower.split('-')[0];
+  return BYCT.LANGUAGES.some(([c]) => c === base) ? base : 'en';
+};
+
 /** 기본 설정값 */
 BYCT.DEFAULTS = {
   enabled: true,
+  uiLang: 'auto',              // 'auto' | 'ko' | 'en' — 확장 화면 자체의 언어
   autoTranslate: false,        // true면 스크롤하며 자동 번역
-  targetLang: 'ko',
+  targetLang: 'en',            // 설치 시 defaultTargetLang() 결과로 덮어쓴다
   engine: 'builtin',
   fallbackEngine: '',          // 기본 엔진 실패 시 대체 (빈 문자열이면 없음)
   translateReplies: true,

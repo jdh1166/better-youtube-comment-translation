@@ -3,6 +3,7 @@
 (function (BYCT) {
   'use strict';
   const { ytdom } = BYCT;
+  const t = (k, p) => BYCT.i18n.t(k, p);
 
   /** comment element -> view 객체 */
   const views = new WeakMap();
@@ -18,6 +19,13 @@
     if (cls) n.className = cls;
     if (text != null) n.textContent = text;
     return n;
+  }
+
+  /** 스피너 + 문구. innerHTML 을 쓰지 않고 노드로 조립한다. */
+  function setStatus(status, text, withSpinner) {
+    status.textContent = '';
+    if (withSpinner) status.appendChild(el('span', 'byct-spinner'));
+    if (text) status.appendChild(document.createTextNode(text));
   }
 
   /** 댓글에 UI 컨테이너를 붙이고 view 객체를 돌려준다 */
@@ -36,7 +44,7 @@
     const block = el('div', 'byct-translation');
     const badge = el('span', 'byct-badge');
     const body = el('div', 'byct-text');
-    const more = el('button', 'byct-more', '더보기');
+    const more = el('button', 'byct-more', t('btn.more'));
     more.type = 'button';
     block.append(badge, body, more);
 
@@ -51,7 +59,7 @@
     more.addEventListener('click', (e) => {
       e.preventDefault(); e.stopPropagation();
       const clamped = body.classList.toggle('byct-clamp');
-      more.textContent = clamped ? '더보기' : '접기';
+      more.textContent = t(clamped ? 'btn.more' : 'btn.less');
     });
 
     return v;
@@ -67,7 +75,7 @@
   }
 
   /**
-   * @param {'idle'|'loading'|'done'|'error'|'needs-download'|'skipped'|'downloading'} state
+   * @param {'idle'|'loading'|'done'|'error'|'needs-download'|'skipped'|'pending'|'downloading'} state
    * @param {object} data
    */
   function setState(comment, state, data = {}) {
@@ -83,7 +91,7 @@
 
     switch (state) {
       case 'idle':
-        btn.textContent = '번역';
+        btn.textContent = t('btn.translate');
         btn.hidden = false;
         block.hidden = true;
         if (data.detected && data.detected !== 'und') {
@@ -92,30 +100,31 @@
         break;
 
       case 'loading':
-        btn.textContent = '번역';
+        btn.textContent = t('btn.translate');
         btn.hidden = false;
         btn.disabled = true;
         block.hidden = true;
-        status.innerHTML = '<span class="byct-spinner"></span>번역 중…';
+        setStatus(status, t('status.translating'), true);
         break;
 
       case 'downloading':
         btn.hidden = true;
         block.hidden = true;
-        status.innerHTML = '<span class="byct-spinner"></span>'
-          + `언어팩 다운로드 중… ${Math.round((data.progress || 0) * 100)}%`;
+        setStatus(status, t('status.downloading', {
+          pct: Math.round((data.progress || 0) * 100),
+        }), true);
         break;
 
       case 'needs-download':
-        btn.textContent = `${langLabel(data.detected)} 번역 켜기`;
+        btn.textContent = t('btn.enableLang', { lang: langLabel(data.detected) });
         btn.hidden = false;
         btn.classList.add('byct-btn-primary');
         block.hidden = true;
-        status.textContent = '최초 1회 언어팩 다운로드가 필요합니다';
+        status.textContent = t('status.needsDownload');
         break;
 
       case 'done': {
-        btn.textContent = data.showing === false ? '번역 보기' : '원문만';
+        btn.textContent = t(data.showing === false ? 'btn.showTranslation' : 'btn.showOriginal');
         btn.hidden = false;
         block.hidden = data.showing === false;
 
@@ -125,7 +134,7 @@
 
         body.textContent = data.text || '';
         body.classList.add('byct-clamp');
-        more.textContent = '더보기';
+        more.textContent = t('btn.more');
         // 실제로 넘칠 때만 "더보기" 노출
         requestAnimationFrame(() => {
           const overflow = body.scrollHeight - body.clientHeight > 4;
@@ -136,15 +145,15 @@
       }
 
       case 'error':
-        btn.textContent = '다시 시도';
+        btn.textContent = t('btn.retry');
         btn.hidden = false;
         block.hidden = true;
-        status.textContent = data.message || '번역 실패';
+        status.textContent = data.message || t('status.failed');
         status.classList.add('byct-status-error');
         break;
 
       // pending: 언어 감지 전. 아직 아무것도 보여주지 않는다
-      // (이미 한국어인 댓글에 "번역" 버튼이 잠깐 깜빡이는 것을 막는다)
+      // (이미 목표 언어인 댓글에 "번역" 버튼이 잠깐 깜빡이는 것을 막는다)
       case 'pending':
       case 'skipped':
         btn.hidden = true;

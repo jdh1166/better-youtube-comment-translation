@@ -3,7 +3,16 @@
 (function () {
   'use strict';
 
-  const syncStore = {};
+  const params = new URLSearchParams(location.search);
+
+  /* 테스트는 "한국어 사용자" 를 가정한다.
+     기본 번역 대상 언어는 이제 브라우저 언어를 따라가므로, 고정하지 않으면
+     테스트를 돌리는 기기의 언어 설정에 따라 결과가 달라진다.
+     ?target=en / ?ui=en 으로 바꿔 확인할 수 있다. */
+  const syncStore = {
+    targetLang: params.get('target') || 'ko',
+    uiLang: params.get('ui') || 'auto',
+  };
   const localStore = {};
   const changeListeners = [];
 
@@ -42,6 +51,12 @@
   }
 
   window.chrome = window.chrome || {};
+
+  // 브라우저 UI 언어. ?uilang=en 으로 바꿔서 테스트할 수 있다.
+  const forced = params.get('uilang');
+  chrome.i18n = {
+    getUILanguage: () => forced || navigator.language || 'en',
+  };
 
   chrome.storage = {
     sync: areaFactory(syncStore, 'sync'),

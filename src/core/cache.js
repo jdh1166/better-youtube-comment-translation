@@ -27,7 +27,7 @@
         for (const [k, v] of entries) mem.set(k, v);
       }
     } catch (e) {
-      console.warn('[BYCT] 캐시 로드 실패:', e);
+      console.warn('[BYCT] cache load failed:', e);
     }
   }
 
@@ -40,7 +40,7 @@
       await chrome.storage.local.set({ [STORAGE_KEY]: entries });
     } catch (e) {
       // QUOTA_BYTES 초과 시 절반 버리고 재시도
-      console.warn('[BYCT] 캐시 저장 실패, 축소 후 재시도:', e);
+      console.warn('[BYCT] cache save failed, retrying smaller:', e);
       const half = [...mem.entries()].slice(-Math.floor(MAX_ENTRIES / 2));
       mem.clear();
       half.forEach(([k, v]) => mem.set(k, v));

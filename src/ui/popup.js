@@ -3,22 +3,24 @@
   'use strict';
 
   const $ = (id) => document.getElementById(id);
+  const t = (k, p) => BYCT.i18n.t(k, p);
   let tabId = null;
 
   function fillSelects() {
     const lang = $('targetLang');
+    lang.textContent = '';
     for (const [code, name] of BYCT.LANGUAGES) {
       lang.appendChild(new Option(`${name} (${code})`, code));
     }
     const eng = $('engine');
-    for (const [id, meta] of Object.entries(BYCT.ENGINE_META)) {
-      eng.appendChild(new Option(meta.label, id));
+    eng.textContent = '';
+    for (const id of Object.keys(BYCT.ENGINE_META)) {
+      eng.appendChild(new Option(t(`engine.${id}.label`), id));
     }
   }
 
   function updateEngineNote() {
-    const meta = BYCT.ENGINE_META[$('engine').value];
-    $('engine-note').textContent = meta ? meta.note : '';
+    $('engine-note').textContent = t(`engine.${$('engine').value}.note`);
   }
 
   /** content script에 메시지를 보낸다. 로드되어 있지 않으면 null 반환. */
@@ -31,26 +33,43 @@
     }
   }
 
-  async function refreshStats() {
-    const s = await ask({ type: 'BYCT_GET_STATUS' });
+  /** 통계 줄. 숫자만 <b>로 감싸므로 innerHTML 대신 노드로 조립한다. */
+  function renderStats(parts, warning) {
     const box = $('stats');
-    if (!s || !s.ok) {
-      box.textContent = '페이지를 새로고침하면 상태가 표시됩니다.';
-      return;
-    }
-    const parts = [`인식한 댓글 <b>${s.total}</b>개`];
-    if (s.done) parts.push(`번역 완료 <b>${s.done}</b>`);
-    if (s.skipped) parts.push(`건너뜀 <b>${s.skipped}</b>`);
-    if (s.queue && (s.queue.running || s.queue.pending)) {
-      parts.push(`진행 중 <b>${s.queue.running + s.queue.pending}</b>`);
-    }
-    box.innerHTML = parts.join(' · ');
-    if (!s.builtinAvailable) {
-      box.innerHTML += '<br><span style="color:var(--danger)">이 브라우저에서 Chrome 내장 번역을 쓸 수 없습니다 (Chrome 138+ 데스크톱 필요)</span>';
+    box.textContent = '';
+    parts.forEach((text, i) => {
+      if (i) box.appendChild(document.createTextNode(' · '));
+      box.appendChild(document.createTextNode(text));
+    });
+    if (warning) {
+      box.appendChild(document.createElement('br'));
+      const w = document.createElement('span');
+      w.style.color = 'var(--danger)';
+      w.textContent = warning;
+      box.appendChild(w);
     }
   }
 
+  async function refreshStats() {
+    const s = await ask({ type: 'BYCT_GET_STATUS' });
+    if (!s || !s.ok) {
+      renderStats([t('popup.needsReload')]);
+      return;
+    }
+    const parts = [t('popup.statsSeen', { n: s.total })];
+    if (s.done) parts.push(t('popup.statsDone', { n: s.done }));
+    if (s.skipped) parts.push(t('popup.statsSkipped', { n: s.skipped }));
+    if (s.queue && (s.queue.running || s.queue.pending)) {
+      parts.push(t('popup.statsRunning', { n: s.queue.running + s.queue.pending }));
+    }
+    renderStats(parts, s.builtinAvailable ? null : t('popup.noBuiltin'));
+  }
+
   async function init() {
+    const cfg = await BYCT.settings.get();
+    BYCT.i18n.setLang(cfg.uiLang);
+    BYCT.i18n.applyDom();
+
     fillSelects();
     $('version').textContent = 'v' + BYCT.VERSION;
 
@@ -59,7 +78,6 @@
     tabId = onYT ? tab.id : null;
     $('not-youtube').hidden = !!onYT;
 
-    const cfg = await BYCT.settings.get();
     $('autoTranslate').checked = cfg.autoTranslate;
     $('targetLang').value = cfg.targetLang;
     $('engine').value = cfg.engine;
@@ -74,10 +92,8 @@
     $('engine').addEventListener('change', (e) => {
       BYCT.settings.set({ engine: e.target.value });
       updateEngineNote();
-      const meta = BYCT.ENGINE_META[e.target.value];
-      if (meta && meta.needsKey) {
-        $('stats').innerHTML =
-          '<span style="color:var(--danger)">이 엔진은 API 키가 필요합니다 — 전체 설정에서 입력해주세요.</span>';
+      if (BYCT.ENGINE_META[e.target.value].needsKey) {
+        renderStats([], t('popup.needsKey'));
       }
     });
 
@@ -86,10 +102,7 @@
       btn.disabled = true;
       const r = await ask({ type: 'BYCT_TRANSLATE_VISIBLE' });
       btn.disabled = false;
-      if (!r) {
-        $('stats').textContent = '페이지를 새로고침한 뒤 다시 시도해주세요.';
-        return;
-      }
+      if (!r) { renderStats([t('popup.reloadRetry')]); return; }
       setTimeout(refreshStats, 400);
     });
 

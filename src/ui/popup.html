@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en" data-i18n-title="popup.title">
 <head>
   <meta charset="utf-8">
   <title>Better YouTube Comment Translation</title>
@@ -9,46 +9,46 @@
 <body class="popup">
   <header class="pop-header">
     <img src="../../icons/icon32.png" alt="" width="24" height="24">
-    <h1>댓글 번역</h1>
-    <button id="open-options" class="icon-btn" title="설정 열기" aria-label="설정 열기">⚙</button>
+    <h1 data-i18n="popup.title">댓글 번역</h1>
+    <button id="open-options" class="icon-btn"
+            data-i18n-title="popup.settingsTitle" data-i18n-aria="popup.settingsTitle">⚙</button>
   </header>
 
-  <div id="not-youtube" class="notice" hidden>
-    유튜브 영상 페이지에서 열어주세요.
-  </div>
+  <div id="not-youtube" class="notice" data-i18n="popup.notYouTube" hidden></div>
 
   <main id="main-panel">
     <label class="switch-row">
       <span class="switch-label">
-        자동 번역
-        <small>스크롤하며 자동으로 번역합니다</small>
+        <span data-i18n="popup.autoTranslate"></span>
+        <small data-i18n="popup.autoTranslateDesc"></small>
       </span>
       <input type="checkbox" id="autoTranslate" class="switch">
     </label>
 
     <div class="field">
-      <label for="targetLang">번역할 언어</label>
+      <label for="targetLang" data-i18n="popup.targetLang"></label>
       <select id="targetLang"></select>
     </div>
 
     <div class="field">
-      <label for="engine">번역 엔진</label>
+      <label for="engine" data-i18n="popup.engine"></label>
       <select id="engine"></select>
       <p class="hint" id="engine-note"></p>
     </div>
 
-    <button id="translate-now" class="btn btn-primary">지금 보이는 댓글 번역</button>
+    <button id="translate-now" class="btn btn-primary" data-i18n="popup.translateNow"></button>
 
     <div class="stats" id="stats" aria-live="polite"></div>
   </main>
 
   <footer class="pop-footer">
-    <button id="open-options-2" class="link-btn">전체 설정</button>
+    <button id="open-options-2" class="link-btn" data-i18n="popup.allSettings"></button>
     <span class="spacer"></span>
     <span class="version" id="version"></span>
   </footer>
 
   <script src="../core/constants.js"></script>
+  <script src="../core/i18n.js"></script>
   <script src="../core/util.js"></script>
   <script src="../core/settings.js"></script>
   <script src="popup.js"></script>

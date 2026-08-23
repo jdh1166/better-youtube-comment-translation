@@ -1,0 +1,16 @@
+{
+  "extName": {
+    "message": "Better YouTube Comment Translation",
+    "description": "확장 프로그램 이름"
+  },
+  "extDesc": {
+    "message": "유튜브가 놓치는 댓글까지 전부 번역합니다. 기본 엔진은 무료 온디바이스 번역이라 API 키가 필요 없습니다.",
+    "description": "스토어 등록용 짧은 설명"
+  },
+  "cmdToggleAuto": {
+    "message": "자동 번역 켜기/끄기"
+  },
+  "cmdTranslateAll": {
+    "message": "현재 보이는 댓글 모두 번역"
+  }
+}

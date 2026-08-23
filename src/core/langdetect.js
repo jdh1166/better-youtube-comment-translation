@@ -49,7 +49,7 @@
       try {
         return await withTimeout(LanguageDetector.create(), 60000, null);
       } catch (e) {
-        console.warn('[BYCT] LanguageDetector.create 실패:', e);
+        console.warn('[BYCT] LanguageDetector.create failed:', e);
         detectorFailed = true;
         return null;
       }
@@ -187,7 +187,7 @@
           };
         }
       } catch (e) {
-        console.warn('[BYCT] detect 실패, 휴리스틱으로 전환:', e);
+        console.warn('[BYCT] detect failed, falling back to heuristic:', e);
       }
     }
     return heuristic(t);

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en" data-i18n-title="opt.pageTitle">
 <head>
   <meta charset="utf-8">
-  <title>Better YouTube Comment Translation — 설정</title>
+  <title>Better YouTube Comment Translation</title>
   <link rel="stylesheet" href="shared.css">
   <link rel="stylesheet" href="options.css">
 </head>
@@ -12,93 +12,93 @@
       <img src="../../icons/icon48.png" alt="" width="40" height="40">
       <div>
         <h1>Better YouTube Comment Translation</h1>
-        <p class="sub">유튜브 댓글과 답글 전체를 원하는 언어로 번역합니다.</p>
+        <p class="sub" data-i18n="opt.subtitle"></p>
+      </div>
+      <!-- 화면 언어는 설치 직후 가장 먼저 눈에 띄어야 하므로 헤더에 둔다 -->
+      <div class="header-lang">
+        <label for="uiLang" data-i18n="opt.uiLang"></label>
+        <select id="uiLang"></select>
       </div>
     </header>
 
-    <div id="welcome" class="notice notice-ok" hidden>
-      설치가 완료되었습니다. 기본 설정은 <b>Chrome 내장 번역(온디바이스)</b>이라 API 키 없이 바로 쓸 수 있습니다.
-      유튜브 영상에서 댓글의 <b>번역</b> 버튼을 누르면 최초 1회 언어팩을 내려받습니다.
-    </div>
+    <div id="welcome" class="notice notice-ok" data-i18n-html="opt.welcome" hidden></div>
 
     <section class="card">
-      <h2>기본</h2>
+      <h2 data-i18n="opt.section.general"></h2>
 
       <label class="switch-row">
-        <span class="switch-label">확장 프로그램 사용
-          <small>끄면 유튜브에 아무것도 표시하지 않습니다</small></span>
+        <span class="switch-label"><span data-i18n="opt.enabled"></span>
+          <small data-i18n="opt.enabledDesc"></small></span>
         <input type="checkbox" id="enabled" class="switch">
       </label>
 
       <label class="switch-row">
-        <span class="switch-label">자동 번역
-          <small>스크롤하며 화면에 들어온 댓글을 자동으로 번역 (단축키 Alt+T)</small></span>
+        <span class="switch-label"><span data-i18n="opt.autoTranslate"></span>
+          <small data-i18n="opt.autoTranslateDesc"></small></span>
         <input type="checkbox" id="autoTranslate" class="switch">
       </label>
 
       <div class="field">
-        <label for="targetLang">번역할 언어</label>
+        <label for="targetLang" data-i18n="opt.targetLang"></label>
         <select id="targetLang"></select>
+        <p class="hint" data-i18n="opt.targetLangDesc"></p>
       </div>
 
       <label class="switch-row">
-        <span class="switch-label">답글도 번역
-          <small>유튜브 기본 기능이 가장 자주 놓치는 부분입니다</small></span>
+        <span class="switch-label"><span data-i18n="opt.translateReplies"></span>
+          <small data-i18n="opt.translateRepliesDesc"></small></span>
         <input type="checkbox" id="translateReplies" class="switch">
       </label>
 
       <label class="switch-row">
-        <span class="switch-label">이미 같은 언어면 건너뛰기
-          <small>번역할 필요 없는 댓글에 버튼을 만들지 않습니다</small></span>
+        <span class="switch-label"><span data-i18n="opt.skipSameLanguage"></span>
+          <small data-i18n="opt.skipSameLanguageDesc"></small></span>
         <input type="checkbox" id="skipSameLanguage" class="switch">
       </label>
     </section>
 
     <section class="card">
-      <h2>번역 엔진</h2>
+      <h2 data-i18n="opt.section.engine"></h2>
 
       <div class="field">
-        <label for="engine">기본 엔진</label>
+        <label for="engine" data-i18n="opt.engine"></label>
         <select id="engine"></select>
         <p class="hint" id="engine-note"></p>
       </div>
 
       <div class="field">
-        <label for="fallbackEngine">대체 엔진 <span class="opt">(선택)</span></label>
+        <label for="fallbackEngine">
+          <span data-i18n="opt.fallbackEngine"></span>
+          <span class="opt" data-i18n="opt.optional"></span>
+        </label>
         <select id="fallbackEngine"></select>
-        <p class="hint">기본 엔진이 실패하거나 해당 언어쌍을 지원하지 않을 때 대신 사용합니다.</p>
+        <p class="hint" data-i18n="opt.fallbackDesc"></p>
       </div>
 
       <!-- Chrome 내장 -->
       <div class="engine-panel" data-engine="builtin">
-        <div class="notice" id="builtin-status">확인 중…</div>
-        <p class="hint">
-          Chrome 138 이상 데스크톱에서만 동작합니다. 번역은 전부 기기 안에서 이뤄지며
-          댓글 내용이 외부로 전송되지 않습니다. 언어쌍마다 최초 1회 모델을 내려받습니다.
-          직접 지원하지 않는 언어쌍은 영어를 경유해 2단계로 번역합니다.
-        </p>
+        <div class="notice" id="builtin-status" data-i18n="opt.builtinChecking"></div>
+        <p class="hint" data-i18n="opt.builtinDesc"></p>
         <div class="btn-row">
-          <button class="btn" id="warmup-detector">언어 감지 모델 준비</button>
+          <button class="btn" id="warmup-detector" data-i18n="opt.warmupDetector"></button>
           <span class="test-result" id="detector-result"></span>
         </div>
-        <p class="hint">
-          원문 언어를 알아내는 데 쓰는 모델입니다. 준비되지 않으면 문자·불용어 기반 추정으로
-          대신 동작하는데, 짧은 라틴 문자 댓글에서 가끔 틀립니다.
-        </p>
+        <p class="hint" data-i18n="opt.warmupDesc"></p>
       </div>
 
       <!-- DeepL -->
       <div class="engine-panel" data-engine="deepl" hidden>
         <div class="field">
-          <label for="deeplKey">DeepL API 키</label>
+          <label for="deeplKey" data-i18n="opt.deeplKeyLabel"></label>
           <input type="password" id="deeplKey" autocomplete="off" spellcheck="false"
                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx">
-          <p class="hint">무료 키는 <code>:fx</code>로 끝납니다.
-            <a href="https://www.deepl.com/pro-api" target="_blank" rel="noreferrer noopener">키 발급받기</a></p>
+          <p class="hint"><span data-i18n-html="opt.deeplKeyHint"></span>
+            <a href="https://www.deepl.com/pro-api" target="_blank" rel="noreferrer noopener"
+               data-i18n="opt.deeplKeyLink"></a></p>
         </div>
         <div class="btn-row">
-          <button class="btn" data-grant="deepl">권한 허용</button>
-          <button class="btn" data-test="deepl">연결 테스트</button>
+          <button class="btn" data-grant="deepl" data-i18n="opt.grant"></button>
+          <button class="btn" data-test="deepl" data-i18n="opt.test"></button>
           <span class="test-result" data-result="deepl"></span>
         </div>
       </div>
@@ -106,13 +106,13 @@
       <!-- Google -->
       <div class="engine-panel" data-engine="google" hidden>
         <div class="field">
-          <label for="googleKey">Google Cloud API 키</label>
+          <label for="googleKey" data-i18n="opt.googleKeyLabel"></label>
           <input type="password" id="googleKey" autocomplete="off" spellcheck="false" placeholder="AIza…">
-          <p class="hint">Google Cloud 콘솔에서 <b>Cloud Translation API</b>를 활성화한 프로젝트의 키가 필요합니다.</p>
+          <p class="hint" data-i18n-html="opt.googleKeyHint"></p>
         </div>
         <div class="btn-row">
-          <button class="btn" data-grant="google">권한 허용</button>
-          <button class="btn" data-test="google">연결 테스트</button>
+          <button class="btn" data-grant="google" data-i18n="opt.grant"></button>
+          <button class="btn" data-test="google" data-i18n="opt.test"></button>
           <span class="test-result" data-result="google"></span>
         </div>
       </div>
@@ -120,92 +120,87 @@
       <!-- LLM -->
       <div class="engine-panel" data-engine="llm" hidden>
         <div class="field">
-          <label for="llmEndpoint">엔드포인트 (OpenAI 호환 chat completions)</label>
+          <label for="llmEndpoint" data-i18n="opt.llmEndpoint"></label>
           <input type="url" id="llmEndpoint" spellcheck="false"
                  placeholder="https://api.openai.com/v1/chat/completions">
         </div>
         <div class="field">
-          <label for="llmModel">모델</label>
+          <label for="llmModel" data-i18n="opt.llmModel"></label>
           <input type="text" id="llmModel" spellcheck="false" placeholder="gpt-4o-mini">
         </div>
         <div class="field">
-          <label for="llmKey">API 키</label>
+          <label for="llmKey" data-i18n="opt.llmKey"></label>
           <input type="password" id="llmKey" autocomplete="off" spellcheck="false">
         </div>
-        <p class="hint">
-          슬랭·밈·말장난 번역이 가장 자연스럽지만 느리고 비용이 발생합니다.
-          댓글이 API 제공자에게 전송된다는 점을 유의하세요.
-        </p>
+        <p class="hint" data-i18n="opt.llmHint"></p>
         <div class="btn-row">
-          <button class="btn" data-grant="llm">권한 허용</button>
-          <button class="btn" data-test="llm">연결 테스트</button>
+          <button class="btn" data-grant="llm" data-i18n="opt.grant"></button>
+          <button class="btn" data-test="llm" data-i18n="opt.test"></button>
           <span class="test-result" data-result="llm"></span>
         </div>
       </div>
     </section>
 
     <section class="card">
-      <h2>표시</h2>
+      <h2 data-i18n="opt.section.display"></h2>
 
       <label class="switch-row">
-        <span class="switch-label">원문 함께 보기
-          <small>끄면 번역문만 남기고 원문을 숨깁니다</small></span>
+        <span class="switch-label"><span data-i18n="opt.showOriginal"></span>
+          <small data-i18n="opt.showOriginalDesc"></small></span>
         <input type="checkbox" id="showOriginal" class="switch">
       </label>
 
       <label class="switch-row">
-        <span class="switch-label">언어·엔진 배지 표시
-          <small>번역문 위에 "English → 한국어 · Chrome" 표시</small></span>
+        <span class="switch-label"><span data-i18n="opt.showEngineBadge"></span>
+          <small data-i18n="opt.showEngineBadgeDesc"></small></span>
         <input type="checkbox" id="showEngineBadge" class="switch">
       </label>
 
       <label class="switch-row">
-        <span class="switch-label">유튜브 기본 번역 버튼 숨기기
-          <small>버튼이 두 개 겹쳐 보이는 것을 방지합니다</small></span>
+        <span class="switch-label"><span data-i18n="opt.hideYoutubeButton"></span>
+          <small data-i18n="opt.hideYoutubeButtonDesc"></small></span>
         <input type="checkbox" id="hideYoutubeButton" class="switch">
       </label>
     </section>
 
     <section class="card">
-      <h2>고급</h2>
+      <h2 data-i18n="opt.section.advanced"></h2>
 
       <div class="grid2">
         <div class="field">
-          <label for="minLength">최소 글자 수</label>
+          <label for="minLength" data-i18n="opt.minLength"></label>
           <input type="number" id="minLength" min="1" max="50">
-          <p class="hint">이보다 짧은 댓글은 번역하지 않습니다.</p>
+          <p class="hint" data-i18n="opt.minLengthDesc"></p>
         </div>
         <div class="field">
-          <label for="concurrency">동시 번역 수</label>
+          <label for="concurrency" data-i18n="opt.concurrency"></label>
           <input type="number" id="concurrency" min="1" max="8">
-          <p class="hint">높이면 빨라지지만 부하가 커집니다.</p>
+          <p class="hint" data-i18n="opt.concurrencyDesc"></p>
         </div>
       </div>
 
       <label class="switch-row">
-        <span class="switch-label">언어팩 자동 다운로드
-          <small>클릭 없이 필요한 모델을 내려받습니다. 네트워크 사용량이 늘 수 있습니다</small></span>
+        <span class="switch-label"><span data-i18n="opt.autoDownloadModels"></span>
+          <small data-i18n="opt.autoDownloadModelsDesc"></small></span>
         <input type="checkbox" id="autoDownloadModels" class="switch">
       </label>
 
       <div class="btn-row">
-        <button class="btn btn-danger" id="clear-cache">번역 캐시 비우기</button>
+        <button class="btn btn-danger" id="clear-cache" data-i18n="opt.clearCache"></button>
         <span class="test-result" id="cache-info"></span>
       </div>
     </section>
 
     <section class="card">
-      <h2>단축키</h2>
-      <p class="hint">
-        <b>Alt+T</b> — 자동 번역 켜기/끄기 · <b>Alt+Shift+T</b> — 현재 보이는 댓글 모두 번역<br>
-        주소창에 <code>chrome://extensions/shortcuts</code> 를 입력하면 바꿀 수 있습니다.
-      </p>
+      <h2 data-i18n="opt.section.shortcuts"></h2>
+      <p class="hint" data-i18n-html="opt.shortcutsDesc"></p>
     </section>
 
-    <div class="save-bar" id="save-bar">저장됨</div>
+    <div class="save-bar" id="save-bar" data-i18n="opt.saved"></div>
   </div>
 
   <script src="../core/constants.js"></script>
+  <script src="../core/i18n.js"></script>
   <script src="../core/util.js"></script>
   <script src="../core/settings.js"></script>
   <script src="../core/langdetect.js"></script>

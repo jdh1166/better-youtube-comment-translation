@@ -27,7 +27,10 @@ function expectThrow(label, fn) {
 globalThis.importScripts = (...ps) => ps.forEach((p) =>
   vm.runInThisContext(fs.readFileSync(path.join(ROOT, p), 'utf8'), { filename: p }));
 
+let UI_LANGUAGE = 'en';   // 테스트에서 브라우저 언어를 바꿔가며 확인한다
+
 globalThis.chrome = {
+  i18n: { getUILanguage: () => UI_LANGUAGE },
   runtime: {
     id: 'testext',
     onMessage: { addListener() {} },
@@ -116,6 +119,71 @@ expectThrow('총 길이 초과 거부', () => validateRequest({ ...good, texts: 
 expectThrow('언어 코드 주입 문자 거부', () => validateRequest({ ...good, targetLanguage: 'ko&key=x' }));
 expectThrow('언어 코드 경로 문자 거부', () => validateRequest({ ...good, targetLanguage: '../../etc' }));
 expectThrow('대상 언어 누락 거부', () => validateRequest({ ...good, targetLanguage: '' }));
+
+// ---------- 5. i18n 카탈로그 ----------
+
+console.log('\n[5] i18n 카탈로그');
+const { MESSAGES, t: tr, setLang, resolve } = T.i18n;
+const langs = Object.keys(MESSAGES);
+check('지원 언어가 ko/en 둘 다 있다', langs.includes('ko') && langs.includes('en'), langs.join(','));
+
+// 한쪽에만 있는 키가 있으면 그 언어에서 문구가 통째로 빠진다
+const keysEn = Object.keys(MESSAGES.en);
+const keysKo = Object.keys(MESSAGES.ko);
+const missingKo = keysEn.filter((k) => !(k in MESSAGES.ko));
+const missingEn = keysKo.filter((k) => !(k in MESSAGES.en));
+check(`en 키 ${keysEn.length}개가 ko 에 모두 있다`, missingKo.length === 0, missingKo.join(', '));
+check(`ko 키 ${keysKo.length}개가 en 에 모두 있다`, missingEn.length === 0, missingEn.join(', '));
+
+// 치환자가 양쪽에서 같아야 한다. 한쪽에만 {n} 이 있으면 그 언어에서 숫자가 사라진다.
+const phMismatch = [];
+for (const k of keysEn) {
+  const ph = (s) => (String(s).match(/\{(\w+)\}/g) || []).sort().join(',');
+  if (ph(MESSAGES.en[k]) !== ph(MESSAGES.ko[k])) {
+    phMismatch.push(`${k} (en:${ph(MESSAGES.en[k])} / ko:${ph(MESSAGES.ko[k])})`);
+  }
+}
+check('치환자 {name} 가 양쪽에서 일치', phMismatch.length === 0, phMismatch.join(' | '));
+
+// 빈 문구가 있으면 화면에 아무것도 안 나온다
+const empties = [];
+for (const l of langs) for (const k of Object.keys(MESSAGES[l])) {
+  if (!String(MESSAGES[l][k]).trim()) empties.push(`${l}:${k}`);
+}
+check('빈 문구 없음', empties.length === 0, empties.join(', '));
+
+setLang('en');
+check("영어: btn.translate = 'Translate'", tr('btn.translate') === 'Translate', tr('btn.translate'));
+setLang('ko');
+check("한국어: btn.translate = '번역'", tr('btn.translate') === '번역', tr('btn.translate'));
+check('치환 동작', tr('toast.translatingN', { n: 7 }) === '7개 댓글 번역 중…', tr('toast.translatingN', { n: 7 }));
+check('없는 치환자는 그대로 둔다', tr('toast.translatingN', {}).includes('{n}'), tr('toast.translatingN', {}));
+
+// 'auto' 는 브라우저 언어를 따라간다
+UI_LANGUAGE = 'ko-KR';
+check("auto + 브라우저 ko-KR -> ko", resolve('auto') === 'ko', resolve('auto'));
+UI_LANGUAGE = 'fr-FR';
+check('auto + 미지원 언어(fr) -> en 폴백', resolve('auto') === 'en', resolve('auto'));
+UI_LANGUAGE = 'en-US';
+check('명시 지정이 브라우저 언어보다 우선', resolve('ko') === 'ko', resolve('ko'));
+
+// 없는 키는 키 문자열을 그대로 돌려준다 (화면이 비지 않도록)
+setLang('en');
+check('없는 키는 키 이름을 반환', tr('no.such.key') === 'no.such.key', tr('no.such.key'));
+
+// ---------- 6. 기본 번역 대상 언어 ----------
+
+console.log('\n[6] 설치 시 기본 번역 대상 언어');
+for (const [ui, want] of [
+  ['ko-KR', 'ko'], ['en-US', 'en'], ['ja-JP', 'ja'],
+  ['zh-TW', 'zh-Hant'], ['zh-CN', 'zh'], ['pt-BR', 'pt'],
+  ['sw-KE', 'en'],   // 미지원 언어는 영어로
+]) {
+  UI_LANGUAGE = ui;
+  const got = T.defaultTargetLang();
+  check(`${ui} -> ${want}`, got === want, got);
+}
+UI_LANGUAGE = 'en-US';
 
 // ---------- 결과 ----------
 

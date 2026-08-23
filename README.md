@@ -8,11 +8,10 @@ YouTube decides to offer a button for.
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Chrome](https://img.shields.io/badge/Chrome-138%2B-brightgreen)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
-![Tests](https://img.shields.io/badge/tests-75%20passing-success)
+![Tests](https://img.shields.io/badge/tests-95%20passing-success)
 
-> **Note on UI language:** the extension's own interface is currently **Korean only**.
-> The translation itself works for any supported target language. Internationalising the UI
-> is on the [roadmap](#roadmap).
+> The interface is available in **English and Korean**, and follows your browser language
+> automatically. You can override it at any time in the options.
 
 ---
 
@@ -55,6 +54,7 @@ Plus:
   `source → English → target`.
 - **Request batching** — remote engines send everything collected within 180 ms as a single API call.
 - **Follows the YouTube theme** — light and dark are detected at runtime, independently of your OS setting.
+- **English and Korean interface** — picked from your browser language on install, switchable in the options.
 
 ## Install
 
@@ -73,23 +73,23 @@ On older Chrome, or when a language pack is unavailable, configure a fallback en
 
 ### Translating a single comment
 
-Every comment that needs translating gets a small **번역** ("Translate") button with the detected
-source language next to it. Click it. The translation appears underneath the original.
+Every comment that needs translating gets a small **Translate** button with the detected source
+language next to it. Click it. The translation appears underneath the original.
 
-Click the button again (now **원문만**, "original only") to hide the translation.
+Click the button again (now **Original only**) to hide the translation.
 
 The very first time you translate from a given language, Chrome has to download that language pack.
-The button will read **`<Language>` 번역 켜기** ("enable `<Language>` translation") instead — click it once,
-and every later comment in that language translates automatically. This click is required by Chrome,
-not by this extension: the browser will not start a model download without a user gesture.
+The button will read **Enable `<Language>` translation** instead — click it once, and every later
+comment in that language translates automatically. This click is required by Chrome, not by this
+extension: the browser will not start a model download without a user gesture.
 
 ### Translating everything
 
-Open the extension popup (toolbar icon) and turn on **자동 번역** (auto-translate). Comments are
-then translated as they scroll into view, replies included.
+Open the extension popup (toolbar icon) and turn on **Auto-translate**. Comments are then
+translated as they scroll into view, replies included.
 
-For a one-off pass over what's currently on screen, click **지금 보이는 댓글 번역**
-("translate visible comments") — or press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>.
+For a one-off pass over what's currently on screen, click **Translate visible comments** — or press
+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>.
 
 ### Keyboard shortcuts
 
@@ -102,21 +102,22 @@ Rebind them at `chrome://extensions/shortcuts`.
 
 ### Settings
 
-The popup covers the everyday controls. **전체 설정** ("all settings") opens the full options page:
+The popup covers the everyday controls. **All settings** opens the full options page:
 
-| Setting | Korean label | Default | What it does |
-| ------- | ------------ | ------- | ------------ |
-| Enabled | 확장 프로그램 사용 | on | Master switch |
-| Auto-translate | 자동 번역 | off | Translate on scroll |
-| Target language | 번역할 언어 | Korean | 32 languages available |
-| Translate replies | 답글도 번역 | on | The thing YouTube misses most |
-| Skip same language | 이미 같은 언어면 건너뛰기 | on | No button for comments you can already read |
-| Show original | 원문 함께 보기 | on | Off = replace the original with the translation |
-| Show badge | 언어·엔진 배지 표시 | on | `English → 한국어 · Chrome` above each translation |
-| Hide YouTube's button | 유튜브 기본 번역 버튼 숨기기 | on | Avoids two overlapping buttons |
-| Minimum length | 최소 글자 수 | 2 | Shorter comments are ignored |
-| Concurrency | 동시 번역 수 | 3 | Higher is faster but heavier |
-| Auto-download models | 언어팩 자동 다운로드 | off | Skip the one-time click, at the cost of background downloads |
+| Setting | Default | What it does |
+| ------- | ------- | ------------ |
+| Interface language | Browser language | Language of this extension's own menus — English or Korean |
+| Extension enabled | on | Master switch |
+| Auto-translate | off | Translate on scroll |
+| Translate into | Browser language | 32 languages available |
+| Translate replies too | on | The thing YouTube misses most |
+| Skip comments already in that language | on | No button for comments you can already read |
+| Keep the original visible | on | Off = replace the original with the translation |
+| Show language and engine badge | on | `English → 한국어 · Chrome` above each translation |
+| Hide YouTube's own translate button | on | Avoids two overlapping buttons |
+| Minimum length | 2 | Shorter comments are ignored |
+| Concurrent translations | 3 | Higher is faster but heavier |
+| Auto-download language packs | off | Skip the one-time click, at the cost of background downloads |
 
 ## Translation engines
 
@@ -127,7 +128,7 @@ does the work. Each language pair downloads once, the first time you use it.
 
 ### DeepL / Google Cloud Translation / LLM (optional)
 
-Enter your own API key on the options page, then press **권한 허용** ("grant permission").
+Enter your own API key on the options page, then press **Grant permission**.
 
 The extension only requests `youtube.com` access up front. A remote engine's API origin is requested
 separately via `chrome.permissions.request()`, and only when you actually turn that engine on.
@@ -152,9 +153,11 @@ No build step. Clone it and load the folder — that's the whole workflow.
 
 ```
 manifest.json              MV3
+_locales/                  store listing name and description, per locale
 src/
   core/                    shared between content script and service worker
     constants.js           namespace, defaults, engine metadata, trivial-text rules
+    i18n.js                message catalogue (en/ko) + DOM localisation
     util.js                hashing, timeouts, language-code normalisation, retry
     settings.js            chrome.storage.sync wrapper + change subscription
     langdetect.js          LanguageDetector API + heuristic fallback
@@ -173,7 +176,8 @@ src/
     options.*              full settings
 test/
   harness.html             reproduces the real YouTube comment DOM; 41 in-browser checks
-  node-tests.js            34 headless checks
+  node-tests.js            54 headless checks
+  serve.py                 no-cache static server for testing
 ```
 
 ### Design notes
@@ -209,18 +213,23 @@ Headless:
 node test/node-tests.js
 ```
 
-34 checks — trivial-text classification, ReDoS regression, language-code normalisation,
-service-worker request validation.
+54 checks — trivial-text classification, ReDoS regression, language-code normalisation,
+service-worker request validation, message-catalogue parity, default target language.
 
 In-browser (needs a DOM):
 
 ```bash
-python -m http.server 8731 -d .
+python test/serve.py
 ```
 
 - `http://localhost:8731/test/harness.html` → click **자동 검증 실행** — 41 checks
+  (add `?ui=en` to see the English interface, `?target=en` to change the target language)
 - `python test/make-preview.py`, then open `test/_preview/options.html` to inspect the UI outside
   the extension context
+
+`test/serve.py` sends no-cache headers, and the harness loads its scripts with a cache-busting
+query. If you still see stale behaviour, add a unique query to the URL (`harness.html?x=1`) —
+a cached copy of the page silently invalidated a whole round of testing once.
 
 The harness reproduces the real YouTube comment DOM and mocks `chrome.*` in memory, so the content
 script logic can be exercised without installing anything. It deliberately does **not** define
@@ -228,7 +237,7 @@ YouTube's CSS variables — an earlier version did, which hid the dark-mode bug 
 
 ## Roadmap
 
-- Internationalise the extension's own UI (currently Korean only)
+- More interface languages (currently English and Korean)
 - Live chat support
 - Chrome Web Store release
 
@@ -239,7 +248,7 @@ architecture, implementation, test suites and documentation were all produced wi
 
 This is disclosed because it is relevant to how you should evaluate the code:
 
-- Behaviour is covered by 75 automated checks (34 headless, 41 in-browser), and the DOM assumptions
+- Behaviour is covered by 95 automated checks (54 headless, 41 in-browser), and the DOM assumptions
   were verified against live youtube.com rather than assumed.
 - A security and performance review pass found and fixed a real ReDoS vulnerability, an API-key
   exposure path, and several correctness bugs. Each is documented in [CHANGELOG.md](CHANGELOG.md)

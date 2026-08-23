@@ -46,20 +46,32 @@
   </ytd-item-section-renderer>
 </ytd-comments>
 
-<script src="harness-data.js"></script>
-<script src="harness-shim.js"></script>
-
-<script src="../src/core/constants.js"></script>
-<script src="../src/core/util.js"></script>
-<script src="../src/core/settings.js"></script>
-<script src="../src/core/langdetect.js"></script>
-<script src="../src/core/cache.js"></script>
-<script src="../src/core/queue.js"></script>
-<script src="../src/core/engine-builtin.js"></script>
-<script src="../src/content/ytdom.js"></script>
-<script src="../src/content/ui.js"></script>
-<script src="../src/content/content.js"></script>
-
-<script src="harness-controls.js"></script>
+<!-- 캐시 무효화 쿼리를 붙여 순서대로 로드한다.
+     브라우저가 JS 를 캐시해서 고친 코드가 아니라 예전 코드로 검증하게 되는 사고가 실제로 있었다.
+     파싱 중의 document.write 는 실행 순서를 보존하므로 manifest 의 로드 순서와 동일하다. -->
+<script>
+  (function () {
+    var v = '?nocache=' + Date.now();
+    var files = [
+      'harness-data.js',
+      'harness-shim.js',
+      '../src/core/constants.js',
+      '../src/core/i18n.js',
+      '../src/core/util.js',
+      '../src/core/settings.js',
+      '../src/core/langdetect.js',
+      '../src/core/cache.js',
+      '../src/core/queue.js',
+      '../src/core/engine-builtin.js',
+      '../src/content/ytdom.js',
+      '../src/content/ui.js',
+      '../src/content/content.js',
+      'harness-controls.js',
+    ];
+    for (var i = 0; i < files.length; i++) {
+      document.write('<script src="' + files[i] + v + '"><\/script>');
+    }
+  })();
+</script>
 </body>
 </html>

@@ -5,6 +5,7 @@
 (function (BYCT) {
   'use strict';
   const { withTimeout, normalizeLang } = BYCT.util;
+  const t = (k, params) => BYCT.i18n.t(k, params);
 
   const instances = new Map();      // "src>tgt" -> Promise<Translator>
   const availCache = new Map();     // "src>tgt" -> { value, at }
@@ -105,7 +106,7 @@
           if (Date.now() - lastTick > STALL_MS) {
             clearInterval(iv);
             reject(Object.assign(
-              new Error(`번역 모델을 준비하지 못했습니다 (${k}) — 브라우저가 응답하지 않습니다`),
+              new Error(t('err.modelStalled', { pair: k })),
               { __noRetry: true, __code: 'STALL' }
             ));
           }
@@ -113,9 +114,9 @@
         created.then(() => clearInterval(iv), () => clearInterval(iv));
       });
 
-      const t = await Promise.race([created, stalled]);
+      const translator = await Promise.race([created, stalled]);
       availCache.set(k, { value: 'available', at: Date.now() });
-      return t;
+      return translator;
     })();
 
     instances.set(k, p);
@@ -130,7 +131,7 @@
    */
   async function translate(text, { sourceLanguage, targetLanguage, onProgress }) {
     if (!present()) {
-      throw Object.assign(new Error('이 브라우저에는 Chrome 내장 번역 API가 없습니다 (Chrome 138+ 데스크톱 필요)'), { __noRetry: true });
+      throw Object.assign(new Error(t('err.noBuiltinApi')), { __noRetry: true });
     }
     const src = normalizeLang(sourceLanguage);
     const tgt = normalizeLang(targetLanguage);
@@ -139,15 +140,15 @@
     const { path, status } = await resolveRoute(src, tgt);
     if (status === 'unavailable') {
       throw Object.assign(
-        new Error(`Chrome 내장 번역이 ${src}→${tgt} 언어쌍을 지원하지 않습니다`),
+        new Error(t('err.pairUnavailable', { src, tgt })),
         { __noRetry: true, __code: 'PAIR_UNAVAILABLE' }
       );
     }
 
     let cur = text;
     for (let i = 0; i < path.length - 1; i++) {
-      const t = await getTranslator(path[i], path[i + 1], onProgress);
-      cur = await t.translate(cur);
+      const translator = await getTranslator(path[i], path[i + 1], onProgress);
+      cur = await translator.translate(cur);
     }
     return { text: cur, via: path };
   }
@@ -155,7 +156,7 @@
   /** 언어팩 선다운로드. 사용자 클릭 핸들러 안에서 호출해야 한다(사용자 제스처 필요). */
   async function preload(src, tgt, onProgress) {
     const { path, status } = await resolveRoute(normalizeLang(src), normalizeLang(tgt));
-    if (status === 'unavailable') throw new Error('지원하지 않는 언어쌍입니다');
+    if (status === 'unavailable') throw new Error(t('err.pairUnsupported'));
     for (let i = 0; i < path.length - 1; i++) {
       await getTranslator(path[i], path[i + 1], onProgress);
     }
@@ -164,7 +165,7 @@
 
   function destroyAll() {
     for (const p of instances.values()) {
-      p.then((t) => { try { t.destroy && t.destroy(); } catch {} }).catch(() => {});
+      p.then((tr) => { try { tr.destroy && tr.destroy(); } catch {} }).catch(() => {});
     }
     instances.clear();
   }

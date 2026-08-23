@@ -5,9 +5,17 @@
    2) 키보드 단축키를 활성 탭으로 전달
    Chrome 내장 Translator는 워커에서 쓸 수 없으므로(문서 컨텍스트 필요) content script가 직접 처리한다. */
 
-importScripts('/src/core/constants.js', '/src/core/util.js', '/src/core/settings.js');
+importScripts('/src/core/constants.js', '/src/core/i18n.js', '/src/core/util.js', '/src/core/settings.js');
 
 const { retry, normalizeLang } = BYCT.util;
+const t = (k, params) => BYCT.i18n.t(k, params);
+
+/** 사용자에게 보일 메시지는 저장된 화면 언어로 만든다 */
+async function useUiLang() {
+  const cfg = await BYCT.settings.get();
+  BYCT.i18n.setLang(cfg.uiLang);
+  return cfg;
+}
 
 // ---------- 언어 코드 매핑 ----------
 
@@ -33,14 +41,11 @@ function noRetry(msg, code) {
 async function ensureHostPermission(url) {
   let origin;
   try { origin = new URL(url).origin + '/*'; }
-  catch { throw noRetry(`잘못된 엔드포인트 URL: ${url}`); }
+  catch { throw noRetry(t('err.badEndpoint', { url })); }
 
   const has = await chrome.permissions.contains({ origins: [origin] });
   if (has) return true;
-  throw noRetry(
-    `${origin} 접근 권한이 없습니다. 확장 프로그램 옵션 화면에서 이 엔진의 "권한 허용" 버튼을 눌러주세요.`,
-    'NO_PERMISSION'
-  );
+  throw noRetry(t('err.noPermission', { origin }), 'NO_PERMISSION');
 }
 
 // ---------- 엔진 구현 ----------
@@ -48,7 +53,7 @@ async function ensureHostPermission(url) {
 /** @returns {Promise<{texts:string[], detected:string[]}>} */
 async function translateDeepL(texts, src, tgt, cfg) {
   const key = (cfg.deeplKey || '').trim();
-  if (!key) throw noRetry('DeepL API 키가 설정되지 않았습니다.', 'NO_KEY');
+  if (!key) throw noRetry(t('err.deepl.noKey'), 'NO_KEY');
 
   const base = key.endsWith(':fx') ? 'https://api-free.deepl.com' : 'https://api.deepl.com';
   const url = `${base}/v2/translate`;
@@ -69,23 +74,23 @@ async function translateDeepL(texts, src, tgt, cfg) {
 
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
-    if (res.status === 403) throw noRetry('DeepL 인증 실패 — API 키를 확인해주세요.', 'AUTH');
-    if (res.status === 456) throw noRetry('DeepL 이번 달 번역 한도를 모두 사용했습니다.', 'QUOTA');
-    if (res.status === 429) throw new Error('DeepL 요청이 너무 많습니다 (429)');
-    throw new Error(`DeepL ${res.status}: ${detail.slice(0, 200)}`);
+    if (res.status === 403) throw noRetry(t('err.deepl.auth'), 'AUTH');
+    if (res.status === 456) throw noRetry(t('err.deepl.quota'), 'QUOTA');
+    if (res.status === 429) throw new Error(t('err.deepl.rate'));
+    throw new Error(t('err.http', { engine: 'DeepL', status: res.status, detail: detail.slice(0, 200) }));
   }
 
   const json = await res.json();
   const tr = json.translations || [];
   return {
-    texts: tr.map((t) => t.text),
-    detected: tr.map((t) => normalizeLang(t.detected_source_language || src)),
+    texts: tr.map((x) => x.text),
+    detected: tr.map((x) => normalizeLang(x.detected_source_language || src)),
   };
 }
 
 async function translateGoogle(texts, src, tgt, cfg) {
   const key = (cfg.googleKey || '').trim();
-  if (!key) throw noRetry('Google Cloud API 키가 설정되지 않았습니다.', 'NO_KEY');
+  if (!key) throw noRetry(t('err.google.noKey'), 'NO_KEY');
 
   const url = 'https://translation.googleapis.com/language/translate/v2';
   await ensureHostPermission(url);
@@ -103,19 +108,16 @@ async function translateGoogle(texts, src, tgt, cfg) {
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
     if (res.status === 400 || res.status === 403) {
-      throw noRetry(
-        `Google 번역 인증/요청 오류 — API 키와 Cloud Translation API 활성화 여부를 확인해주세요. ${detail.slice(0, 200)}`,
-        'AUTH'
-      );
+      throw noRetry(t('err.google.auth', { detail: detail.slice(0, 200) }), 'AUTH');
     }
-    throw new Error(`Google ${res.status}: ${detail.slice(0, 200)}`);
+    throw new Error(t('err.http', { engine: 'Google', status: res.status, detail: detail.slice(0, 200) }));
   }
 
   const json = await res.json();
   const tr = (json.data && json.data.translations) || [];
   return {
-    texts: tr.map((t) => decodeEntities(t.translatedText)),
-    detected: tr.map((t) => normalizeLang(t.detectedSourceLanguage || src)),
+    texts: tr.map((x) => decodeEntities(x.translatedText)),
+    detected: tr.map((x) => normalizeLang(x.detectedSourceLanguage || src)),
   };
 }
 
@@ -128,9 +130,9 @@ function decodeEntities(s) {
 
 async function translateLLM(texts, src, tgt, cfg) {
   const key = (cfg.llmKey || '').trim();
-  if (!key) throw noRetry('LLM API 키가 설정되지 않았습니다.', 'NO_KEY');
+  if (!key) throw noRetry(t('err.llm.noKey'), 'NO_KEY');
   const url = (cfg.llmEndpoint || '').trim();
-  if (!url) throw noRetry('LLM 엔드포인트가 설정되지 않았습니다.', 'NO_ENDPOINT');
+  if (!url) throw noRetry(t('err.llm.noEndpoint'), 'NO_ENDPOINT');
   await ensureHostPermission(url);
 
   const langName = (BYCT.LANGUAGES.find(([c]) => c === tgt) || [tgt, tgt])[1];
@@ -180,10 +182,10 @@ async function translateLLM(texts, src, tgt, cfg) {
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
     if (res.status === 401 || res.status === 403) {
-      throw noRetry('LLM 인증 실패 — API 키를 확인해주세요.', 'AUTH');
+      throw noRetry(t('err.llm.auth'), 'AUTH');
     }
-    if (res.status === 429) throw new Error('LLM 요청 한도 초과 (429)');
-    throw new Error(`LLM ${res.status}: ${detail.slice(0, 200)}`);
+    if (res.status === 429) throw new Error(t('err.llm.rate'));
+    throw new Error(t('err.http', { engine: 'LLM', status: res.status, detail: detail.slice(0, 200) }));
   }
 
   const json = await res.json();
@@ -196,16 +198,16 @@ async function translateLLM(texts, src, tgt, cfg) {
     const parsed = JSON.parse(cleaned);
     arr = Array.isArray(parsed) ? parsed : (parsed.t || parsed.translations || parsed.result);
   } catch {
-    throw new Error('LLM 응답을 JSON으로 파싱하지 못했습니다.');
+    throw new Error(t('err.llm.parse'));
   }
   if (!Array.isArray(arr) || arr.length !== texts.length) {
-    throw new Error(
-      `LLM이 항목 수를 맞추지 못했습니다 (요청 ${texts.length} / 응답 ${Array.isArray(arr) ? arr.length : '?'})`
-    );
+    throw new Error(t('err.llm.count', {
+      want: texts.length, got: Array.isArray(arr) ? arr.length : '?',
+    }));
   }
   // 문자열이 아닌 항목이 섞이면 String() 이 "[object Object]" 를 만들어 조용히 망가진다
   if (!arr.every((x) => typeof x === 'string')) {
-    throw new Error('LLM 응답에 문자열이 아닌 항목이 있습니다.');
+    throw new Error(t('err.llm.nonString'));
   }
   return { texts: arr, detected: texts.map(() => normalizeLang(src)) };
 }
@@ -227,27 +229,27 @@ const LANG_RE = /^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})?$/;
 
 function validateRequest(msg) {
   if (!Object.prototype.hasOwnProperty.call(REMOTE, msg.engine)) {
-    throw noRetry(`알 수 없는 엔진: ${String(msg.engine).slice(0, 30)}`);
+    throw noRetry(t('err.validate.engine', { engine: String(msg.engine).slice(0, 30) }));
   }
   const texts = msg.texts;
   if (!Array.isArray(texts) || texts.length === 0) {
-    throw noRetry('잘못된 요청: 번역할 텍스트가 없습니다');
+    throw noRetry(t('err.validate.noTexts'));
   }
   if (texts.length > MAX_ITEMS) {
-    throw noRetry(`한 번에 보낼 수 있는 항목 수(${MAX_ITEMS})를 초과했습니다`);
+    throw noRetry(t('err.validate.tooMany', { max: MAX_ITEMS }));
   }
   let total = 0;
-  for (const t of texts) {
-    if (typeof t !== 'string') throw noRetry('잘못된 요청: 문자열이 아닌 항목이 있습니다');
-    if (t.length > MAX_ITEM_CHARS) throw noRetry('댓글 하나가 너무 깁니다');
-    total += t.length;
+  for (const item of texts) {
+    if (typeof item !== 'string') throw noRetry(t('err.validate.nonString'));
+    if (item.length > MAX_ITEM_CHARS) throw noRetry(t('err.validate.itemTooLong'));
+    total += item.length;
   }
-  if (total > MAX_TOTAL_CHARS) throw noRetry('요청 크기가 너무 큽니다');
+  if (total > MAX_TOTAL_CHARS) throw noRetry(t('err.validate.tooLarge'));
 
   const tgt = String(msg.targetLanguage || '');
-  if (!LANG_RE.test(tgt)) throw noRetry(`잘못된 대상 언어 코드: ${tgt.slice(0, 20)}`);
+  if (!LANG_RE.test(tgt)) throw noRetry(t('err.validate.badTarget', { code: tgt.slice(0, 20) }));
   const src = String(msg.sourceLanguage || '');
-  if (src && !LANG_RE.test(src)) throw noRetry(`잘못된 원문 언어 코드: ${src.slice(0, 20)}`);
+  if (src && !LANG_RE.test(src)) throw noRetry(t('err.validate.badSource', { code: src.slice(0, 20) }));
 
   return { engine: msg.engine, texts, src, tgt };
 }
@@ -255,7 +257,7 @@ function validateRequest(msg) {
 /** 배치를 엔진별 최대 크기로 쪼개 순차 호출 */
 async function translateRemote(engine, texts, src, tgt, cfg) {
   const spec = REMOTE[engine];
-  if (!spec) throw noRetry(`알 수 없는 엔진: ${engine}`);
+  if (!spec) throw noRetry(t('err.validate.engine', { engine }));
 
   const out = { texts: [], detected: [] };
   for (let i = 0; i < texts.length; i += spec.maxBatch) {
@@ -276,9 +278,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     (async () => {
       try {
         // 확장 내부에서 온 메시지만 처리한다 (sender.id 가 우리 것이어야 함)
-        if (sender.id !== chrome.runtime.id) throw noRetry('허용되지 않은 발신자');
+        if (sender.id !== chrome.runtime.id) throw noRetry(t('err.badSender'));
+        const cfg = await useUiLang();
         const req = validateRequest(msg);
-        const cfg = await BYCT.settings.get();
         const r = await translateRemote(req.engine, req.texts, req.src, req.tgt, cfg);
         sendResponse({ ok: true, texts: r.texts, detected: r.detected });
       } catch (e) {
@@ -313,12 +315,12 @@ chrome.commands.onCommand.addListener(async (command) => {
   if (!tab || !tab.id || !/^https:\/\/(www|m)\.youtube\.com\//.test(tab.url || '')) return;
 
   if (command === 'toggle-auto-translate') {
-    const cfg = await BYCT.settings.get();
+    const cfg = await useUiLang();
     const next = !cfg.autoTranslate;
     await BYCT.settings.set({ autoTranslate: next });
     chrome.tabs.sendMessage(tab.id, {
       type: 'BYCT_TOAST',
-      text: next ? '자동 번역 켜짐' : '자동 번역 꺼짐',
+      text: t(next ? 'toast.autoOn' : 'toast.autoOff'),
     }).catch(() => {});
   } else if (command === 'translate-all-now') {
     chrome.tabs.sendMessage(tab.id, { type: 'BYCT_TRANSLATE_VISIBLE' }).catch(() => {});
@@ -326,8 +328,14 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 // 설치 직후 옵션 페이지로 안내
-chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === 'install') {
-    chrome.tabs.create({ url: chrome.runtime.getURL('src/ui/options.html?welcome=1') });
+chrome.runtime.onInstalled.addListener(async (details) => {
+  if (details.reason !== 'install') return;
+  /* 기본 번역 대상 언어를 브라우저 언어로 맞춘다.
+     이걸 안 하면 영어권 사용자가 설치했을 때 모든 댓글이 한국어로 번역된다. */
+  try {
+    await chrome.storage.sync.set({ targetLang: BYCT.defaultTargetLang() });
+  } catch (e) {
+    console.warn('[BYCT] could not set default target language:', e);
   }
+  chrome.tabs.create({ url: chrome.runtime.getURL('src/ui/options.html?welcome=1') });
 });

@@ -1,0 +1,16 @@
+{
+  "extName": {
+    "message": "Better YouTube Comment Translation",
+    "description": "Extension name shown in the Chrome Web Store and chrome://extensions"
+  },
+  "extDesc": {
+    "message": "Translates every YouTube comment and reply — not just the ones YouTube offers a button for. Free and on-device by default.",
+    "description": "Short description for the store listing"
+  },
+  "cmdToggleAuto": {
+    "message": "Toggle auto-translate"
+  },
+  "cmdTranslateAll": {
+    "message": "Translate all visible comments"
+  }
+}

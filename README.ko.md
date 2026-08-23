@@ -7,7 +7,9 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Chrome](https://img.shields.io/badge/Chrome-138%2B-brightgreen)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
-![Tests](https://img.shields.io/badge/tests-75%20passing-success)
+![Tests](https://img.shields.io/badge/tests-95%20passing-success)
+
+> 확장 화면은 **한국어와 영어**를 지원하며 브라우저 언어를 따라갑니다. 설정에서 언제든 바꿀 수 있습니다.
 
 ---
 
@@ -49,6 +51,7 @@
 - **영어 경유 번역** — 내장 엔진이 직접 지원하지 않는 언어쌍은 `원문 → 영어 → 목표어` 2단계로 처리합니다.
 - **요청 배치 처리** — 원격 엔진은 180ms 동안 모인 댓글을 한 번의 API 호출로 묶어 보냅니다.
 - **유튜브 테마 자동 대응** — OS 설정과 무관하게 유튜브 테마를 런타임에 판정합니다.
+- **한국어·영어 인터페이스** — 설치 시 브라우저 언어로 정해지고, 옵션에서 전환할 수 있습니다.
 
 ## 설치
 
@@ -100,9 +103,10 @@
 
 | 설정 | 기본값 | 설명 |
 | ---- | ------ | ---- |
+| 화면 언어 | 브라우저 언어 | 이 확장의 메뉴 언어 — 한국어 또는 영어 |
 | 확장 프로그램 사용 | 켜짐 | 전체 on/off |
 | 자동 번역 | 꺼짐 | 스크롤하며 자동 번역 |
-| 번역할 언어 | 한국어 | 32개 언어 |
+| 번역할 언어 | 브라우저 언어 | 32개 언어 |
 | 답글도 번역 | 켜짐 | 유튜브가 가장 자주 놓치는 부분 |
 | 이미 같은 언어면 건너뛰기 | 켜짐 | 읽을 수 있는 댓글에는 버튼을 안 만듦 |
 | 원문 함께 보기 | 켜짐 | 끄면 번역문만 남기고 원문을 숨김 |
@@ -144,9 +148,11 @@ LLM 엔진은 OpenAI 호환 `chat/completions` 엔드포인트면 무엇이든 �
 
 ```
 manifest.json              MV3
+_locales/                  스토어 등록용 이름·설명 (언어별)
 src/
   core/                    content script 와 service worker 가 공유
     constants.js           네임스페이스, 기본 설정, 엔진 메타데이터, 번역 제외 규칙
+    i18n.js                메시지 카탈로그(ko/en) + DOM 지역화
     util.js                해시, 타임아웃, 언어코드 정규화, 재시도
     settings.js            chrome.storage.sync 래퍼 + 변경 구독
     langdetect.js          LanguageDetector API + 휴리스틱 폴백
@@ -165,7 +171,8 @@ src/
     options.*              전체 설정
 test/
   harness.html             실제 유튜브 댓글 DOM 재현, 브라우저 검사 41건
-  node-tests.js            헤드리스 검사 34건
+  node-tests.js            헤드리스 검사 54건
+  serve.py                 캐시를 끄는 테스트용 정적 서버
 ```
 
 ### 설계 메모
@@ -197,16 +204,22 @@ test/
 node test/node-tests.js
 ```
 
-34건 — 번역 제외 판정, ReDoS 회귀, 언어 코드 정규화, 서비스 워커 요청 검증.
+54건 — 번역 제외 판정, ReDoS 회귀, 언어 코드 정규화, 서비스 워커 요청 검증,
+메시지 카탈로그 키 일치, 기본 번역 대상 언어.
 
 DOM 이 필요한 것:
 
 ```bash
-python -m http.server 8731 -d .
+python test/serve.py
 ```
 
 - `http://localhost:8731/test/harness.html` → **자동 검증 실행** 버튼 — 41건
+  (`?ui=en` 으로 영어 화면, `?target=en` 으로 번역 대상 언어를 바꿔서 확인 가능)
 - `python test/make-preview.py` 실행 후 `test/_preview/options.html` 로 확장 밖에서 UI 확인
+
+`test/serve.py` 는 no-cache 헤더를 보내고 하네스도 캐시 무효화 쿼리로 스크립트를 로드합니다.
+그래도 예전 동작이 보이면 URL 에 고유 쿼리를 붙이세요(`harness.html?x=1`).
+캐시된 페이지 때문에 검증 한 바퀴가 통째로 무의미해진 적이 있습니다.
 
 하네스는 실제 유튜브 댓글 DOM 구조를 재현하고 `chrome.*` 를 인메모리 목으로 대체해서, 설치 없이
 content script 로직을 검증합니다. 유튜브 CSS 변수는 **일부러 정의하지 않습니다** — 예전에 정의해뒀다가
@@ -214,7 +227,7 @@ content script 로직을 검증합니다. 유튜브 CSS 변수는 **일부러 �
 
 ## 앞으로
 
-- 확장 UI 다국어화 (현재 한국어 전용)
+- 인터페이스 언어 추가 (현재 한국어·영어)
 - 라이브 채팅 지원
 - 크롬 웹스토어 배포
 
@@ -225,7 +238,7 @@ content script 로직을 검증합니다. 유튜브 CSS 변수는 **일부러 �
 
 이걸 밝히는 이유는, 코드를 어떻게 평가해야 하는지와 직결되기 때문입니다:
 
-- 동작은 자동 검사 75건(헤드리스 34, 브라우저 41)으로 덮여 있고, DOM 관련 가정은 추측이 아니라
+- 동작은 자동 검사 95건(헤드리스 54, 브라우저 41)으로 덮여 있고, DOM 관련 가정은 추측이 아니라
   실제 youtube.com 에서 확인했습니다.
 - 보안·성능 점검 과정에서 실제 ReDoS 취약점 하나, API 키 노출 경로 하나, 그리고 여러 정확성 버그를
   찾아 고쳤습니다. 각각의 측정값과 함께 [CHANGELOG.md](CHANGELOG.md) 에 기록되어 있습니다.

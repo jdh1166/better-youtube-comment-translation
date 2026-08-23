@@ -1,23 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "Better YouTube Comment Translation",
-  "version": "0.2.0",
-  "description": "유튜브 댓글·답글 전체를 원하는 언어로 번역합니다. Chrome 내장 온디바이스 번역으로 API 키 없이 무료.",
+  "name": "__MSG_extName__",
+  "version": "0.3.0",
+  "description": "__MSG_extDesc__",
   "minimum_chrome_version": "138",
-
-  "permissions": ["storage"],
-  "host_permissions": ["https://*.youtube.com/*"],
-  "optional_host_permissions": ["https://*/*"],
-
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*.youtube.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
   "background": {
     "service_worker": "src/bg/service-worker.js"
   },
-
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/*", "https://m.youtube.com/*"],
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://m.youtube.com/*"
+      ],
       "js": [
         "src/core/constants.js",
+        "src/core/i18n.js",
         "src/core/util.js",
         "src/core/settings.js",
         "src/core/langdetect.js",
@@ -28,12 +35,13 @@
         "src/content/ui.js",
         "src/content/content.js"
       ],
-      "css": ["src/content/styles.css"],
+      "css": [
+        "src/content/styles.css"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }
   ],
-
   "action": {
     "default_popup": "src/ui/popup.html",
     "default_title": "Better YouTube Comment Translation",
@@ -44,27 +52,29 @@
       "128": "icons/icon128.png"
     }
   },
-
   "options_ui": {
     "page": "src/ui/options.html",
     "open_in_tab": true
   },
-
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-
   "commands": {
     "toggle-auto-translate": {
-      "suggested_key": { "default": "Alt+T" },
-      "description": "자동 번역 켜기/끄기"
+      "suggested_key": {
+        "default": "Alt+T"
+      },
+      "description": "__MSG_cmdToggleAuto__"
     },
     "translate-all-now": {
-      "suggested_key": { "default": "Alt+Shift+T" },
-      "description": "현재 보이는 댓글 모두 번역"
+      "suggested_key": {
+        "default": "Alt+Shift+T"
+      },
+      "description": "__MSG_cmdTranslateAll__"
     }
-  }
+  },
+  "default_locale": "en"
 }
