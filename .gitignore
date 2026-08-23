@@ -1,0 +1,23 @@
+# 생성물
+test/_preview/
+*.zip
+
+# 파이썬
+__pycache__/
+*.py[cod]
+
+# 노드
+node_modules/
+
+# 에디터 / OS
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# 이 저장소의 .claude/launch.json 은 개발 머신의 절대경로를 담고 있어 공유하지 않는다
+.claude/
+
+# 웹스토어 제출용 개인 메모 (공개 저장소에 올리지 않음)
+STORE.md

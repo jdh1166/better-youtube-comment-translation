@@ -1,0 +1,134 @@
+/* 유튜브 댓글 영역의 시각적 뼈대만 흉내낸다.
+   (커스텀 엘리먼트는 기본이 inline이라 block으로 바꿔줘야 함)
+
+   중요: 예전에는 여기서 --yt-spec-* 변수를 정의했는데, 그것 때문에 확장이 그 변수에
+   의존한 채로 테스트를 통과해버렸다. 실제 유튜브(2026-08)는 그 변수를 정의하지 않는다.
+   하네스가 현실보다 친절하면 안 되므로 정의하지 않는다.
+   테마는 실제 유튜브와 동일하게 <html dark> 속성으로만 전달한다. */
+
+:root { color-scheme: light dark; }
+
+html {
+  --hx-bg: #ffffff;
+  --hx-fg: #0f0f0f;
+  --hx-dim: #606060;
+  --hx-line: rgba(0, 0, 0, 0.1);
+  --hx-chip: rgba(0, 0, 0, 0.05);
+  --hx-cta: #065fd4;
+}
+
+html[dark] {
+  --hx-bg: #0f0f0f;
+  --hx-fg: #f1f1f1;
+  --hx-dim: #aaaaaa;
+  --hx-line: rgba(255, 255, 255, 0.1);
+  --hx-chip: rgba(255, 255, 255, 0.1);
+  --hx-cta: #3ea6ff;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: "Roboto", "Noto Sans KR", Arial, sans-serif;
+  background: var(--hx-bg);
+  color: var(--hx-fg);
+}
+
+ytd-comments, ytd-item-section-renderer, ytd-comment-thread-renderer,
+ytd-comment-view-model, ytd-comment-replies-renderer, ytd-expander,
+ytd-comment-engagement-bar, ytd-comments-header-renderer { display: block; }
+
+ytd-comments { max-width: 780px; }
+
+ytd-comment-thread-renderer { margin-bottom: 18px; }
+
+ytd-comment-view-model > #body { display: flex; gap: 12px; }
+
+#author-thumbnail img {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #ff3b30, #c9002b);
+  display: block;
+}
+
+ytd-comment-view-model #main { flex: 1; min-width: 0; }
+
+#header-author { display: flex; gap: 6px; align-items: baseline; }
+#author-text { font-size: 13px; font-weight: 500; text-decoration: none; color: var(--hx-fg); }
+#published-time-text a { font-size: 12px; color: var(--hx-dim); text-decoration: none; }
+
+/* 실제 유튜브의 댓글 본문 색과 동일하게 (라이트 #0f0f0f / 다크 #f1f1f1) */
+#content-text {
+  display: block;
+  font-size: 14px;
+  line-height: 20px;
+  margin: 2px 0 0;
+  color: var(--hx-fg);
+}
+
+#content-text span { white-space: pre-wrap; }
+
+.emoji { width: 18px; height: 18px; vertical-align: middle; background: #ffd166; border-radius: 3px; }
+
+tp-yt-paper-button#more, tp-yt-paper-button#less { display: none; }
+
+ytd-comment-engagement-bar #toolbar {
+  display: flex; gap: 14px; align-items: center;
+  font-size: 12px; color: var(--hx-dim);
+  margin-top: 6px;
+}
+
+ytd-comment-replies-renderer { margin: 12px 0 0 52px; }
+
+/* 유튜브 기본 번역 버튼(숨겨져 있는 게 정상) */
+ytd-tri-state-button-view-model.translate-button {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--hx-cta);
+  cursor: pointer;
+}
+
+/* ---- 테스트 패널 ---- */
+
+#panel {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--hx-bg);
+  border-bottom: 2px solid var(--hx-line);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+#panel h1 { font-size: 16px; margin: 0 0 4px; }
+
+.note { font-size: 12px; color: var(--hx-dim); margin: 0 0 10px; }
+
+#controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+
+#controls button {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 11px;
+  border: 1px solid var(--hx-line);
+  border-radius: 16px;
+  background: var(--hx-chip);
+  color: var(--hx-fg);
+  cursor: pointer;
+}
+
+#controls button:hover { background: var(--hx-line); }
+
+#log {
+  margin: 0;
+  max-height: 240px;
+  overflow: auto;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  background: var(--hx-chip);
+  color: var(--hx-fg);
+  padding: 10px 12px;
+  border-radius: 8px;
+}

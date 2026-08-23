@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>BYCT 테스트 하네스</title>
+<link rel="stylesheet" href="harness.css">
+<link rel="stylesheet" href="../src/content/styles.css">
+<script>
+  // 실제 유튜브와 동일하게 <html dark> 속성으로 테마를 표현한다.
+  // (유튜브는 OS 설정과 무관하게 자체 테마 설정을 이 속성으로 알린다)
+  if (matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.documentElement.setAttribute('dark', '');
+  }
+</script>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Better YouTube Comment Translation — 테스트 하네스</h1>
+  <p class="note">
+    실제 youtube.com 에서 뜯어온 DOM 구조를 그대로 재현한 페이지입니다.
+    확장을 설치하지 않고 content script 로직만 검증합니다.
+  </p>
+  <div id="controls">
+    <button id="t-auto">자동 번역 토글</button>
+    <button id="t-visible">보이는 댓글 모두 번역</button>
+    <button id="t-lang">목표 언어 전환 (ko/en)</button>
+    <button id="t-original">원문 표시 토글</button>
+    <button id="t-recycle">노드 재활용 시뮬레이션</button>
+    <button id="t-append">댓글 더 불러오기 (무한스크롤)</button>
+    <button id="t-theme">유튜브 테마 전환 (light/dark)</button>
+    <button id="t-assert">자동 검증 실행</button>
+  </div>
+  <pre id="log"></pre>
+</div>
+
+<!-- ===== 유튜브 댓글 섹션 구조 재현 ===== -->
+<ytd-comments id="comments">
+  <ytd-item-section-renderer id="sections">
+    <div id="header">
+      <ytd-comments-header-renderer>
+        <h2><yt-formatted-string>댓글 2,454,748개</yt-formatted-string></h2>
+      </ytd-comments-header-renderer>
+    </div>
+    <div id="contents"></div>
+  </ytd-item-section-renderer>
+</ytd-comments>
+
+<script src="harness-data.js"></script>
+<script src="harness-shim.js"></script>
+
+<script src="../src/core/constants.js"></script>
+<script src="../src/core/util.js"></script>
+<script src="../src/core/settings.js"></script>
+<script src="../src/core/langdetect.js"></script>
+<script src="../src/core/cache.js"></script>
+<script src="../src/core/queue.js"></script>
+<script src="../src/core/engine-builtin.js"></script>
+<script src="../src/content/ytdom.js"></script>
+<script src="../src/content/ui.js"></script>
+<script src="../src/content/content.js"></script>
+
+<script src="harness-controls.js"></script>
+</body>
+</html>

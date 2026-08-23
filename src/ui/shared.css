@@ -1,0 +1,198 @@
+/* 팝업과 옵션 페이지 공용 스타일. 라이트/다크 모두 대응. */
+
+:root {
+  --bg: #ffffff;
+  --bg-sunken: #f6f7f8;
+  --fg: #0f0f0f;
+  --fg-muted: #606060;
+  --border: #e0e0e0;
+  --accent: #065fd4;
+  --accent-fg: #ffffff;
+  --danger: #cc0000;
+  --ok: #0f7b3f;
+  --radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #212121;
+    --bg-sunken: #181818;
+    --fg: #f1f1f1;
+    --fg-muted: #aaaaaa;
+    --border: #3f3f3f;
+    --accent: #3ea6ff;
+    --accent-fg: #0f0f0f;
+    --danger: #ff6b6b;
+    --ok: #4ade80;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Roboto", "Noto Sans KR", -apple-system, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 600; }
+
+/* ---------- 폼 ---------- */
+
+.field { margin-bottom: 14px; }
+
+.field > label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+select, input[type="text"], input[type="password"], input[type="number"], input[type="url"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+}
+
+select:focus, input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.hint {
+  margin: 5px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--fg-muted);
+}
+
+.hint a { color: var(--accent); }
+
+/* ---------- 버튼 ---------- */
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg);
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.btn:hover { background: var(--bg-sunken); }
+
+.btn:disabled { opacity: 0.55; cursor: default; }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.btn-primary:hover { filter: brightness(1.08); background: var(--accent); }
+
+.btn-danger { color: var(--danger); border-color: var(--danger); }
+.btn-danger:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+
+.link-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.icon-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.icon-btn:hover { background: var(--bg-sunken); color: var(--fg); }
+
+/* ---------- 토글 스위치 ---------- */
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.switch-label { font-size: 13px; font-weight: 500; }
+.switch-label small {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  margin-top: 1px;
+}
+
+.switch {
+  appearance: none;
+  flex: none;
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--border);
+  position: relative;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 140ms ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.switch:checked { background: var(--accent); }
+.switch:checked::after { transform: translateX(16px); }
+
+.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- 알림 박스 ---------- */
+
+.notice {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--fg-muted);
+}
+
+.notice-ok { border-color: var(--ok); color: var(--ok); }
+.notice-error { border-color: var(--danger); color: var(--danger); }

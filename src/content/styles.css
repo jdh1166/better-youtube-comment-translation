@@ -1,0 +1,254 @@
+/* 테마 색상.
+
+   원래는 유튜브의 --yt-spec-* 변수를 그대로 썼는데, 2026-08 기준 유튜브가 그 변수
+   체계를 걷어내고 --yt-sys-color-* (Material 3) 로 갈아탔다. 그 결과 var() 가 전부
+   폴백값으로 떨어져 다크 모드에서 본문이 거의 검정으로 찍혔다.
+   토큰 이름은 또 바뀔 수 있으므로 유튜브 변수에 의존하지 않고 자체 변수를 쓴다.
+
+   테마 판정 우선순위:
+     1) html[data-byct-theme]  — content.js 가 런타임에 판정해 붙인다 (가장 정확)
+     2) @media (prefers-color-scheme) — 아직 판정 전이거나 스크립트가 못 돈 경우
+   유튜브 테마는 OS 설정과 다를 수 있으므로(유튜브만 라이트로 쓰는 사람이 많다)
+   1번이 반드시 2번을 이겨야 한다. */
+
+:root {
+  --byct-fg: #0f0f0f;
+  --byct-fg-dim: #606060;
+  --byct-accent: #065fd4;
+  --byct-chip: rgba(0, 0, 0, 0.05);
+  --byct-chip-hover: rgba(0, 0, 0, 0.1);
+  --byct-error: #cc0000;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --byct-fg: #f1f1f1;
+    --byct-fg-dim: #aaaaaa;
+    --byct-accent: #3ea6ff;
+    --byct-chip: rgba(255, 255, 255, 0.1);
+    --byct-chip-hover: rgba(255, 255, 255, 0.2);
+    --byct-error: #ff6b6b;
+  }
+}
+
+/* 런타임 판정 결과가 있으면 무조건 우선 (특이도 0,1,1 > 0,1,0) */
+html[data-byct-theme="light"] {
+  --byct-fg: #0f0f0f;
+  --byct-fg-dim: #606060;
+  --byct-accent: #065fd4;
+  --byct-chip: rgba(0, 0, 0, 0.05);
+  --byct-chip-hover: rgba(0, 0, 0, 0.1);
+  --byct-error: #cc0000;
+}
+
+html[data-byct-theme="dark"] {
+  --byct-fg: #f1f1f1;
+  --byct-fg-dim: #aaaaaa;
+  --byct-accent: #3ea6ff;
+  --byct-chip: rgba(255, 255, 255, 0.1);
+  --byct-chip-hover: rgba(255, 255, 255, 0.2);
+  --byct-error: #ff6b6b;
+}
+
+.byct-root {
+  margin: 6px 0 2px;
+  font-family: "Roboto", "Noto Sans KR", Arial, sans-serif;
+}
+
+/* ---------- 버튼 줄 ---------- */
+
+.byct-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  flex-wrap: wrap;
+}
+
+.byct-btn {
+  appearance: none;
+  border: none;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  cursor: pointer;
+  color: var(--byct-fg-dim);
+  background: var(--byct-chip);
+  transition: background 120ms ease, color 120ms ease;
+  white-space: nowrap;
+}
+
+.byct-btn:hover:not(:disabled) {
+  background: var(--byct-chip-hover);
+  color: var(--byct-fg);
+}
+
+.byct-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.byct-btn:focus-visible {
+  outline: 2px solid var(--byct-accent);
+  outline-offset: 2px;
+}
+
+/* 언어팩 다운로드처럼 강조가 필요한 액션 */
+.byct-btn-primary {
+  background: var(--byct-accent);
+  color: #fff;
+}
+
+html[data-byct-theme="dark"] .byct-btn-primary {
+  /* 다크 모드 강조색(#3ea6ff)은 밝아서 흰 글씨가 안 읽힌다 */
+  color: #0f0f0f;
+}
+
+.byct-btn-primary:hover:not(:disabled) {
+  background: var(--byct-accent);
+  filter: brightness(1.1);
+}
+
+/* ---------- 상태 텍스트 ---------- */
+
+.byct-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--byct-fg-dim);
+}
+
+.byct-status-error {
+  color: var(--byct-error);
+}
+
+.byct-spinner {
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: byct-spin 0.7s linear infinite;
+  flex: none;
+}
+
+@keyframes byct-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .byct-spinner { animation-duration: 2s; }
+}
+
+/* ---------- 번역 결과 블록 ---------- */
+
+.byct-translation {
+  margin-top: 6px;
+  padding: 8px 0 8px 12px;
+  border-left: 3px solid var(--byct-accent);
+  border-radius: 2px;
+}
+
+.byct-badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--byct-fg-dim);
+  background: var(--byct-chip);
+}
+
+/* 번역 본문 — 라이트에서 검정, 다크에서 흰색. 원문과 같은 가독성이어야 한다. */
+.byct-text {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--byct-fg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.byct-text.byct-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.byct-more {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 2px 0 0;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--byct-fg-dim);
+}
+
+.byct-more:hover {
+  color: var(--byct-fg);
+}
+
+/* ---------- "원문 함께 보기" 끔 ---------- */
+
+.byct-hide-original #content-text,
+.byct-hide-original #expander #content yt-attributed-string,
+.byct-hide-original #expander #more,
+.byct-hide-original #expander #less {
+  display: none !important;
+}
+
+/* 원문이 사라지면 번역 블록이 본문 자리를 차지하므로 여백/강조선을 정리한다 */
+.byct-hide-original .byct-translation {
+  margin-top: 0;
+  padding-left: 0;
+  border-left: none;
+}
+
+/* ---------- 유튜브 기본 번역 버튼 숨김 ---------- */
+
+.byct-hide-yt-btn {
+  display: none !important;
+}
+
+/* ---------- 토스트 ---------- */
+
+.byct-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translate(-50%, 12px);
+  z-index: 99999;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: rgba(28, 28, 28, 0.94);
+  color: #fff;
+  font-family: "Roboto", "Noto Sans KR", Arial, sans-serif;
+  font-size: 13px;
+  line-height: 19px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+html[data-byct-theme="dark"] .byct-toast {
+  background: rgba(240, 240, 240, 0.96);
+  color: #0f0f0f;
+}
+
+.byct-toast-show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
