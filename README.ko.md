@@ -8,6 +8,7 @@
 ![Chrome](https://img.shields.io/badge/Chrome-138%2B-brightgreen)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
 ![Tests](https://img.shields.io/badge/tests-115%20passing-success)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-%ED%9B%84%EC%9B%90-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/ssiggun)
 
 > 확장 화면은 **한국어와 영어**를 지원하며 브라우저 언어를 따라갑니다. 설정에서 언제든 바꿀 수 있습니다.
 
@@ -185,7 +186,7 @@ test/
 - **서비스 워커는 content script 를 믿지 않습니다.** content script 는 결국 웹 페이지 안에서 도는
   코드이므로, 엔진 이름·항목 수·길이·언어 코드 형식을 검사한 뒤에만 외부 API 로 보냅니다.
 - **댓글은 신뢰할 수 없는 입력입니다.** 텍스트 판정 경로를 전부 입력 길이에 선형으로 유지합니다 —
-  중첩 수량자 정규식 하나가 실제 DoS 였습니다([CHANGELOG.md](CHANGELOG.md) 참고). LLM 엔진에는
+  중첩 수량자 정규식 하나가 실제 DoS 였습니다([CHANGELOG.ko.md](CHANGELOG.ko.md) 참고). LLM 엔진에는
   댓글 안의 지시문을 따르지 말라고 명시했고, 번역 결과는 항상 `textContent` 로만 넣습니다.
 - **셀렉터 폴백.** 유튜브가 마크업을 자주 바꾸므로 모든 셀렉터에 후보를 여러 개 둡니다.
 - **노드 재활용.** 유튜브(Polymer)는 스크롤 중 댓글 DOM 노드를 재사용합니다. 마킹만 믿으면 A 댓글
@@ -242,9 +243,19 @@ content script 로직을 검증합니다. 유튜브 CSS 변수는 **일부러 �
 - 동작은 자동 검사 115건(헤드리스 69, 브라우저 46)으로 덮여 있고, DOM 관련 가정은 추측이 아니라
   실제 youtube.com 에서 확인했습니다.
 - 보안·성능 점검 과정에서 실제 ReDoS 취약점 하나, API 키 노출 경로 하나, 그리고 여러 정확성 버그를
-  찾아 고쳤습니다. 각각의 측정값과 함께 [CHANGELOG.md](CHANGELOG.md) 에 기록되어 있습니다.
+  찾아 고쳤습니다. 각각의 측정값과 함께 [CHANGELOG.ko.md](CHANGELOG.ko.md) 에 기록되어 있습니다.
 - 제3자 감사는 받지 않았습니다. API 키를 맡기기 전에 소스를 직접 읽어보세요 — 다른 확장 프로그램도
   마찬가지겠지만요.
+
+## 후원
+
+이 확장은 무료이고, 광고도 없고, 아무것도 수집하지 않습니다.
+도움이 되셨고 응원해주고 싶으시다면 커피 한 잔 사주세요:
+
+**[ko-fi.com/ssiggun](https://ko-fi.com/ssiggun)**
+
+전적으로 선택입니다 — 후원 여부와 상관없이 모든 기능은 똑같이 동작합니다.
+버그 제보와 풀 리퀘스트도 똑같이 환영합니다.
 
 ## 라이선스
 

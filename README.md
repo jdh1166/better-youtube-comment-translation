@@ -9,6 +9,7 @@ YouTube decides to offer a button for.
 ![Chrome](https://img.shields.io/badge/Chrome-138%2B-brightgreen)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
 ![Tests](https://img.shields.io/badge/tests-115%20passing-success)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/ssiggun)
 
 > The interface is available in **English and Korean**, and follows your browser language
 > automatically. You can override it at any time in the options.
@@ -257,6 +258,16 @@ This is disclosed because it is relevant to how you should evaluate the code:
   with the measurements behind it.
 - It has not been audited by a third party. Read the source before trusting it with API keys, as you
   should with any extension.
+
+## Support
+
+This extension is free, has no ads, and collects nothing. If it saved you some reading and you'd
+like to say thanks, you can buy me a coffee:
+
+**[ko-fi.com/ssiggun](https://ko-fi.com/ssiggun)**
+
+Entirely optional — every feature works the same either way. Bug reports and pull requests are just
+as welcome.
 
 ## License
 
