@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "__MSG_extDesc__",
   "minimum_chrome_version": "138",
   "permissions": [
@@ -26,6 +26,7 @@
         "src/core/constants.js",
         "src/core/i18n.js",
         "src/core/util.js",
+        "src/core/protect.js",
         "src/core/settings.js",
         "src/core/langdetect.js",
         "src/core/cache.js",

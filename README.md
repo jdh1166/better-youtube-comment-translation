@@ -8,7 +8,7 @@ YouTube decides to offer a button for.
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Chrome](https://img.shields.io/badge/Chrome-138%2B-brightgreen)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
-![Tests](https://img.shields.io/badge/tests-95%20passing-success)
+![Tests](https://img.shields.io/badge/tests-115%20passing-success)
 
 > The interface is available in **English and Korean**, and follows your browser language
 > automatically. You can override it at any time in the options.
@@ -158,6 +158,7 @@ src/
   core/                    shared between content script and service worker
     constants.js           namespace, defaults, engine metadata, trivial-text rules
     i18n.js                message catalogue (en/ko) + DOM localisation
+    protect.js             shields @mentions, URLs, timestamps and emoji from the translator
     util.js                hashing, timeouts, language-code normalisation, retry
     settings.js            chrome.storage.sync wrapper + change subscription
     langdetect.js          LanguageDetector API + heuristic fallback
@@ -175,8 +176,8 @@ src/
     popup.*                quick settings
     options.*              full settings
 test/
-  harness.html             reproduces the real YouTube comment DOM; 41 in-browser checks
-  node-tests.js            54 headless checks
+  harness.html             reproduces the real YouTube comment DOM; 46 in-browser checks
+  node-tests.js            69 headless checks
   serve.py                 no-cache static server for testing
 ```
 
@@ -213,8 +214,9 @@ Headless:
 node test/node-tests.js
 ```
 
-54 checks — trivial-text classification, ReDoS regression, language-code normalisation,
-service-worker request validation, message-catalogue parity, default target language.
+69 checks — trivial-text classification, ReDoS regression, language-code normalisation,
+service-worker request validation, message-catalogue parity, default target language,
+protected-token masking.
 
 In-browser (needs a DOM):
 
@@ -222,7 +224,7 @@ In-browser (needs a DOM):
 python test/serve.py
 ```
 
-- `http://localhost:8731/test/harness.html` → click **자동 검증 실행** — 41 checks
+- `http://localhost:8731/test/harness.html` → click **자동 검증 실행** — 46 checks
   (add `?ui=en` to see the English interface, `?target=en` to change the target language)
 - `python test/make-preview.py`, then open `test/_preview/options.html` to inspect the UI outside
   the extension context
@@ -248,7 +250,7 @@ architecture, implementation, test suites and documentation were all produced wi
 
 This is disclosed because it is relevant to how you should evaluate the code:
 
-- Behaviour is covered by 95 automated checks (54 headless, 41 in-browser), and the DOM assumptions
+- Behaviour is covered by 115 automated checks (69 headless, 46 in-browser), and the DOM assumptions
   were verified against live youtube.com rather than assumed.
 - A security and performance review pass found and fixed a real ReDoS vulnerability, an API-key
   exposure path, and several correctness bugs. Each is documented in [CHANGELOG.md](CHANGELOG.md)

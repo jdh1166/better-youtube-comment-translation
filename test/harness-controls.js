@@ -69,6 +69,11 @@
     const root = comment.querySelector('.byct-root');
     return root ? root.dataset.byctState : '(UI 없음)';
   }
+  /** 건너뛴 댓글은 UI 를 만들지 않으므로 레코드에서 상태를 읽는다 */
+  function recStateOf(comment) {
+    const rec = globalThis.BYCT._debug.records.get(comment);
+    return rec ? rec.state : '(레코드 없음)';
+  }
   function findByAuthor(name) {
     return [...document.querySelectorAll('ytd-comment-view-model')]
       .find((c) => (c.querySelector('#author-text')?.textContent || '').trim() === name);
@@ -108,10 +113,13 @@
 
     log('\n[3] 언어 감지 & 같은 언어 건너뛰기');
     const ko = findByAuthor('@onlyko');
-    check('한국어 댓글은 skipped', stateOf(ko) === 'skipped', stateOf(ko));
+    check('한국어 댓글은 skipped', recStateOf(ko) === 'skipped', recStateOf(ko));
+    check('건너뛴 댓글에는 UI 컨테이너가 없다 (빈 자리 방지)',
+      !ko.querySelector('.byct-root'), '컨테이너가 남아있음');
 
     const en = findByAuthor('@MariahRhona');
-    check('영어 댓글은 번역 대기(idle)', ['idle', 'needs-download', 'done', 'loading'].includes(stateOf(en)), stateOf(en));
+    check('영어 댓글은 번역 대기(idle)',
+      ['idle', 'needs-download', 'done', 'loading'].includes(recStateOf(en)), recStateOf(en));
 
     const detected = [];
     for (const [author, expect] of [
@@ -134,7 +142,8 @@
       globalThis.BYCT._debug.records.get(esReply)?.detected === 'es',
       globalThis.BYCT._debug.records.get(esReply)?.detected);
     const koReply = findByAuthor('@user_ko');
-    check('한국어 답글은 skipped', stateOf(koReply) === 'skipped', stateOf(koReply));
+    check('한국어 답글은 skipped', recStateOf(koReply) === 'skipped', recStateOf(koReply));
+    check('건너뛴 답글에도 UI 컨테이너 없음', !koReply.querySelector('.byct-root'));
 
     log('\n[5] 유튜브 기본 번역 버튼 숨김');
     const ytBtn = findByAuthor('@MariahRhona').querySelector('.translate-button');
@@ -264,6 +273,33 @@
     globalThis.BYCT.ytdom.extractText = origExtract;
     check(`댓글 1개 추가에 전체(${total}개) 재스캔이 일어나지 않음`,
       extracts < total, `추출 ${extracts}회 / 화면에 ${total}개`);
+    log('\n[11] 건너뛴 댓글의 빈 자리');
+
+    /* 예전에는 건너뛴 댓글에도 컨테이너를 남기고 버튼만 hidden 처리했다.
+       .byct-root 마진 + .byct-row 최소높이만큼(약 32px) 구멍이 뚫렸다. */
+    const koC = findByAuthor('@onlyko');
+    const enC = findByAuthor('@MariahRhona');
+    const gapOf = (c) => {
+      const text = c.querySelector('#content-text');
+      const bar = c.querySelector('ytd-comment-engagement-bar');
+      return Math.round(bar.getBoundingClientRect().top - text.getBoundingClientRect().bottom);
+    };
+    const koGap = gapOf(koC);
+    const enGap = gapOf(enC);
+    check(`건너뛴 한국어 댓글의 본문~버튼바 간격이 좁다 (${koGap}px)`, koGap < 16, koGap + 'px');
+    check(`번역 대상 영어 댓글은 UI 만큼 간격이 있다`, enGap > koGap, `ko=${koGap} en=${enGap}`);
+
+    // 목표 언어가 바뀌어 번역이 불필요해지면 이미 붙은 UI 도 사라져야 한다
+    const hadUI = !!enC.querySelector('.byct-root');
+    await globalThis.BYCT.settings.set({ targetLang: 'en' });
+    await wait(1000);
+    const enAfter = findByAuthor('@MariahRhona');
+    check('목표 언어를 영어로 바꾸면 영어 댓글 UI 가 사라진다',
+      hadUI && !enAfter.querySelector('.byct-root'),
+      `before=${hadUI} after=${!!enAfter.querySelector('.byct-root')}`);
+    await globalThis.BYCT.settings.set({ targetLang: 'ko' });
+    await wait(1000);
+
 
     log(`\n=== 결과: ${pass} PASS / ${fail} FAIL ===`);
     window.__BYCT_TEST = { pass, fail };

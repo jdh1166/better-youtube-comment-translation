@@ -130,7 +130,9 @@
 
         badge.hidden = !data.showBadge;
         badge.textContent = `${langLabel(data.detected)} → ${langLabel(data.target)}`
-          + (data.engineLabel ? ` · ${data.engineLabel}` : '');
+          + (data.engineLabel ? ` · ${data.engineLabel}` : '')
+          // 영어 경유 2단계 번역은 품질이 떨어지므로 이유를 밝혀둔다
+          + (data.pivot ? ` · ${t('badge.viaPivot', { lang: langLabel(data.pivot) })}` : '');
 
         body.textContent = data.text || '';
         body.classList.add('byct-clamp');

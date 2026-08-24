@@ -48,6 +48,12 @@ vm.runInThisContext(
   { filename: 'service-worker.js' }
 );
 
+// protect.js 는 content script 전용이라 서비스 워커가 로드하지 않는다
+vm.runInThisContext(
+  fs.readFileSync(path.join(ROOT, 'src/core/protect.js'), 'utf8'),
+  { filename: 'protect.js' }
+);
+
 // ---------- 1. 번역 제외 판정 ----------
 
 console.log('\n[1] 번역 제외 판정');
@@ -184,6 +190,51 @@ for (const [ui, want] of [
   check(`${ui} -> ${want}`, got === want, got);
 }
 UI_LANGUAGE = 'en-US';
+
+// ---------- 7. 번역 보호 토큰 ----------
+
+console.log('\n[7] 번역기에 넘기면 안 되는 토큰 보호');
+const { mask, restore } = T.protect;
+
+function roundTrip(label, text, expectTokens) {
+  const m = mask(text);
+  check(`${label}: 토큰 ${expectTokens}개 추출`, m.tokens.length === expectTokens,
+        `${m.tokens.length}개 -> ${JSON.stringify(m.tokens)}`);
+  // 번역기가 문장은 바꾸되 자리표시자는 그대로 둔 상황을 흉내
+  const r = restore(m.text, m.tokens);
+  check(`${label}: 원문으로 정확히 복원`, r.text === text && r.complete,
+        JSON.stringify(r.text));
+  return m;
+}
+
+roundTrip('멘션+타임스탬프', 'Merci @RickAstley regardez à 2:14 !', 2);
+roundTrip('URL', 'check https://example.com/a?b=1 out', 1);
+roundTrip('커스텀 이모지', 'thanks :heart: :fire: so much', 2);
+roundTrip('해시태그', 'love this #rickroll #classic', 2);
+roundTrip('여러 종류 혼합', '@user see 1:02:33 at https://a.co #tag :smile:', 5);
+
+const plain = mask('그냥 평범한 댓글입니다');
+check('보호할 토큰이 없으면 마스킹하지 않는다', plain.tokens.length === 0 && plain.text === '그냥 평범한 댓글입니다');
+
+// 자리표시자가 번역 중 사라진 경우를 감지해야 한다 (호출한 쪽이 마스킹 없이 재시도)
+const m2 = mask('hi @bob at 3:14');
+const lost = restore('안녕 @bob 에게', m2.tokens);
+check('자리표시자 유실을 complete=false 로 알린다', lost.complete === false, String(lost.complete));
+
+// 번역기가 자리표시자 주변에 공백을 넣어도 복원돼야 한다
+const m3 = mask('see 2:14 here');
+const spaced = restore(m3.text.replace('⟦0⟧', '⟦ 0 ⟧'), m3.tokens);
+check('자리표시자 안 공백에도 복원', spaced.text === 'see 2:14 here' && spaced.complete, spaced.text);
+
+// 원문에 이미 ⟦ ⟧ 가 있으면 잘못 복원할 위험이 있으므로 마스킹을 포기한다
+const risky = mask('이 댓글에는 ⟦0⟧ 가 들어있고 @user 도 있다');
+check('원문에 자리표시자 문자가 있으면 마스킹하지 않는다', risky.tokens.length === 0,
+      `${risky.tokens.length}개`);
+
+// URL 안의 숫자·콜론이 타임스탬프나 이모지로 잘못 잡히면 안 된다
+const url = mask('https://youtu.be/abc?t=1:23');
+check('URL 은 통째로 하나의 토큰', url.tokens.length === 1 && url.tokens[0] === 'https://youtu.be/abc?t=1:23',
+      JSON.stringify(url.tokens));
 
 // ---------- 결과 ----------
 

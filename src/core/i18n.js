@@ -46,6 +46,7 @@
       'status.downloading': '언어팩 다운로드 중… {pct}%',
       'status.needsDownload': '최초 1회 언어팩 다운로드가 필요합니다',
       'status.failed': '번역 실패',
+      'badge.viaPivot': '{lang} 경유',
 
       // 토스트
       'toast.translatingN': '{n}개 댓글 번역 중…',
@@ -225,6 +226,7 @@
       'status.downloading': 'Downloading language pack… {pct}%',
       'status.needsDownload': 'Needs a one-time language pack download',
       'status.failed': 'Translation failed',
+      'badge.viaPivot': 'via {lang}',
 
       'toast.translatingN': 'Translating {n} comments…',
       'toast.nothingNew': 'No new comments to translate',

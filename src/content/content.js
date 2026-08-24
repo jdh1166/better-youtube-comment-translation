@@ -97,7 +97,7 @@
 
   const engineLabel = (id) => BYCT.ENGINE_SHORT[id] || id;
 
-  async function runEngine(engineId, text, src, tgt, comment) {
+  async function callEngine(engineId, text, src, tgt, comment) {
     if (engineId === 'builtin') {
       const r = await builtinEngine.translate(text, {
         sourceLanguage: src,
@@ -107,10 +107,26 @@
           if (rec) setState(comment, rec, 'downloading', { progress: loaded });
         },
       });
-      return { text: r.text, detected: src, engine: 'builtin' };
+      // via.length === 3 이면 영어를 경유한 2단계 번역이라 품질이 떨어진다
+      return { text: r.text, detected: src, engine: 'builtin', via: r.via };
     }
     const r = await remoteTranslate(engineId, text, src, tgt);
     return { text: r.text, detected: r.detected || src, engine: engineId };
+  }
+
+  /* 번역기에 넣으면 안 되는 토큰(@멘션, URL, :이모지:, 타임스탬프)을 가리고 번역한 뒤
+     되돌린다. 자리표시자가 번역 과정에서 사라지면 마스킹 없이 한 번 더 시도한다 —
+     엉뚱하게 복원된 문장보다는 원래 동작이 낫다. */
+  async function runEngine(engineId, text, src, tgt, comment) {
+    const masked = BYCT.protect.mask(text);
+    if (!masked.tokens.length) return callEngine(engineId, text, src, tgt, comment);
+
+    const r = await callEngine(engineId, masked.text, src, tgt, comment);
+    const restored = BYCT.protect.restore(r.text, masked.tokens);
+    if (restored.complete) return { ...r, text: restored.text };
+
+    console.warn('[BYCT] placeholders lost in translation, retrying without masking');
+    return callEngine(engineId, text, src, tgt, comment);
   }
 
   // ---------- 렌더링 ----------
@@ -126,6 +142,15 @@
      항상 여기 한 곳을 거치게 해서 언제든 현재 상태로 다시 그릴 수 있게 한다. */
   function paint(comment, rec) {
     if (rec.trivial) return;
+
+    /* 번역이 필요 없거나(같은 언어) 아직 언어 판정 전이면 아무것도 남기지 않는다.
+       버튼만 hidden 으로 감추고 컨테이너를 두면 .byct-root 마진 + .byct-row 최소높이만큼
+       (약 32px) 빈 자리가 남아서, 한국어 사용자가 한국어 댓글을 볼 때 댓글마다 구멍이 뚫린다. */
+    if (rec.state === 'new' || rec.state === 'skipped') {
+      ui.unmount(comment);
+      return;
+    }
+
     switch (rec.state) {
       case 'done':
         applyOriginalVisibility(comment, rec);
@@ -134,6 +159,7 @@
           detected: rec.detected,
           target: cfg.targetLang,
           engineLabel: engineLabel(rec.engine),
+          pivot: rec.pivot,
           showBadge: cfg.showEngineBadge,
           showing: rec.showing,
         });
@@ -160,6 +186,7 @@
         ui.setState(comment, 'idle', { detected: rec.detected });
         break;
     }
+    bindUI(comment);
   }
 
   function setState(comment, rec, state, extra) {
@@ -253,6 +280,7 @@
         translated: r.text,
         detected: normalizeLang(r.detected) || src,
         engine: engineId,
+        pivot: r.via && r.via.length === 3 ? r.via[1] : null,
         showing: true,
       });
     } catch (e) {
@@ -295,9 +323,9 @@
      텍스트가 그대로라 재활용으로도 잡히지 않으므로 UI 존재 여부를 따로 확인해 복구한다. */
   function ensureUI(comment, rec) {
     if (rec.trivial) return;
+    if (rec.state === 'new' || rec.state === 'skipped') return;   // UI 가 없는 게 정상
     const v = ui.get(comment);
     if (v && v.root.isConnected) return;
-    bindUI(comment);
     paint(comment, rec);
   }
 
@@ -330,9 +358,8 @@
 
     if (cfg.hideYoutubeButton) ytdom.setYoutubeButtonHidden(comment, true);
 
-    // 언어 감지가 끝나기 전까지는 UI를 노출하지 않는다
+    // 언어 감지가 끝나기 전까지는 UI를 노출하지 않는다 (paint 가 처리)
     paint(comment, rec);
-    bindUI(comment);
 
     if (io) io.observe(comment);
     detectLater(comment, rec);

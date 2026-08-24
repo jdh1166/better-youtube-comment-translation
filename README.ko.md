@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Chrome](https://img.shields.io/badge/Chrome-138%2B-brightgreen)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
-![Tests](https://img.shields.io/badge/tests-95%20passing-success)
+![Tests](https://img.shields.io/badge/tests-115%20passing-success)
 
 > 확장 화면은 **한국어와 영어**를 지원하며 브라우저 언어를 따라갑니다. 설정에서 언제든 바꿀 수 있습니다.
 
@@ -153,6 +153,7 @@ src/
   core/                    content script 와 service worker 가 공유
     constants.js           네임스페이스, 기본 설정, 엔진 메타데이터, 번역 제외 규칙
     i18n.js                메시지 카탈로그(ko/en) + DOM 지역화
+    protect.js             @멘션·URL·타임스탬프·이모지를 번역기로부터 보호
     util.js                해시, 타임아웃, 언어코드 정규화, 재시도
     settings.js            chrome.storage.sync 래퍼 + 변경 구독
     langdetect.js          LanguageDetector API + 휴리스틱 폴백
@@ -170,8 +171,8 @@ src/
     popup.*                빠른 설정
     options.*              전체 설정
 test/
-  harness.html             실제 유튜브 댓글 DOM 재현, 브라우저 검사 41건
-  node-tests.js            헤드리스 검사 54건
+  harness.html             실제 유튜브 댓글 DOM 재현, 브라우저 검사 46건
+  node-tests.js            헤드리스 검사 69건
   serve.py                 캐시를 끄는 테스트용 정적 서버
 ```
 
@@ -204,8 +205,8 @@ test/
 node test/node-tests.js
 ```
 
-54건 — 번역 제외 판정, ReDoS 회귀, 언어 코드 정규화, 서비스 워커 요청 검증,
-메시지 카탈로그 키 일치, 기본 번역 대상 언어.
+69건 — 번역 제외 판정, ReDoS 회귀, 언어 코드 정규화, 서비스 워커 요청 검증,
+메시지 카탈로그 키 일치, 기본 번역 대상 언어, 보호 토큰 마스킹.
 
 DOM 이 필요한 것:
 
@@ -213,7 +214,7 @@ DOM 이 필요한 것:
 python test/serve.py
 ```
 
-- `http://localhost:8731/test/harness.html` → **자동 검증 실행** 버튼 — 41건
+- `http://localhost:8731/test/harness.html` → **자동 검증 실행** 버튼 — 46건
   (`?ui=en` 으로 영어 화면, `?target=en` 으로 번역 대상 언어를 바꿔서 확인 가능)
 - `python test/make-preview.py` 실행 후 `test/_preview/options.html` 로 확장 밖에서 UI 확인
 
@@ -238,7 +239,7 @@ content script 로직을 검증합니다. 유튜브 CSS 변수는 **일부러 �
 
 이걸 밝히는 이유는, 코드를 어떻게 평가해야 하는지와 직결되기 때문입니다:
 
-- 동작은 자동 검사 95건(헤드리스 54, 브라우저 41)으로 덮여 있고, DOM 관련 가정은 추측이 아니라
+- 동작은 자동 검사 115건(헤드리스 69, 브라우저 46)으로 덮여 있고, DOM 관련 가정은 추측이 아니라
   실제 youtube.com 에서 확인했습니다.
 - 보안·성능 점검 과정에서 실제 ReDoS 취약점 하나, API 키 노출 경로 하나, 그리고 여러 정확성 버그를
   찾아 고쳤습니다. 각각의 측정값과 함께 [CHANGELOG.md](CHANGELOG.md) 에 기록되어 있습니다.

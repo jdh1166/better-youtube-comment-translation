@@ -2,7 +2,7 @@
    번들러 없이 manifest의 js 배열 순서대로 로드되므로, 이 파일이 항상 첫 번째다. */
 var BYCT = (globalThis.BYCT = globalThis.BYCT || {});
 
-BYCT.VERSION = '0.3.0';
+BYCT.VERSION = '0.4.0';
 
 /** 엔진 ID */
 BYCT.ENGINE = {
